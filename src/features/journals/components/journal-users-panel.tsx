@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import type { HostedJournal } from "../types";
 
@@ -43,16 +43,13 @@ export function JournalUsersPanel({ journal }: Props) {
       </div>
 
       <div className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-        <Tabs
-          tabs={[
-            { id: "all", label: "All Users" },
-            { id: "add", label: "Add Existing User" },
-            { id: "invite", label: "Invite" },
-          ]}
-          activeTab="all"
-          onTabChange={() => {}}
-          variant="pill"
-        />
+        <Tabs defaultValue="all" onValueChange={() => {}}>
+          <TabsList>
+            <TabsTrigger value="all">All Users</TabsTrigger>
+            <TabsTrigger value="add">Add Existing User</TabsTrigger>
+            <TabsTrigger value="invite">Invite</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="space-y-4">

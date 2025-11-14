@@ -26,11 +26,11 @@ export default function SystemLayout({ children }: Props) {
     <section className="space-y-8">
       <header className="space-y-4">
         <nav className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-          <Link href="/admin/site-management" className="hover:text-[var(--primary-dark)]">
+          <Link href="/admin/dashboard" className="hover:text-[var(--primary-dark)]">
             Home
           </Link>{" "}
           /{" "}
-          <Link href="/admin/site-management" className="hover:text-[var(--primary-dark)]">
+          <Link href="/admin/dashboard" className="hover:text-[var(--primary-dark)]">
             Administration
           </Link>{" "}
           / Administrative Functions

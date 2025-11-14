@@ -8,7 +8,7 @@ import { deleteJournalAction } from "@/app/(admin)/admin/site-management/hosted-
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Modal } from "@/components/ui/modal";
-import { Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import type { HostedJournal } from "../types";
 import { JournalEditForm } from "./journal-edit-form";
@@ -129,13 +129,7 @@ export function HostedJournalsTable({ journals }: Props) {
                         className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm"
                       >
                         <Tabs
-                          tabs={[
-                            { id: "edit", label: "Edit" },
-                            { id: "remove", label: "Remove" },
-                            { id: "wizard", label: "Settings Wizard" },
-                            { id: "users", label: "Users" },
-                          ]}
-                          activeTab={
+                          defaultValue={
                             modalState?.type === "edit" && modalState.journal?.id === journal.id
                               ? "edit"
                               : modalState?.type === "settings" && modalState.journal.id === journal.id
@@ -144,7 +138,7 @@ export function HostedJournalsTable({ journals }: Props) {
                               ? "users"
                               : "edit"
                           }
-                          onTabChange={(tabId) => {
+                          onValueChange={(tabId) => {
                             if (tabId === "edit") {
                               setModalState({ type: "edit", journal, mode: "edit" });
                             } else if (tabId === "wizard") {
@@ -156,8 +150,14 @@ export function HostedJournalsTable({ journals }: Props) {
                               setExpandedRow(null);
                             }
                           }}
-                          variant="pill"
-                        />
+                        >
+                          <TabsList>
+                            <TabsTrigger value="edit">Edit</TabsTrigger>
+                            <TabsTrigger value="remove">Delete</TabsTrigger>
+                            <TabsTrigger value="wizard">Settings Wizard</TabsTrigger>
+                            <TabsTrigger value="users">Users</TabsTrigger>
+                          </TabsList>
+                        </Tabs>
                         <div className="mt-4 grid gap-2 text-sm text-[var(--muted)]">
                           <p>
                             Pilih tindakan untuk <strong>{journal.name}</strong>.
@@ -171,7 +171,7 @@ export function HostedJournalsTable({ journals }: Props) {
                               variant="danger"
                               onClick={() => setDeleteTarget(journal)}
                             >
-                              Remove
+                              Delete
                             </Button>
                             <Button
                               size="sm"

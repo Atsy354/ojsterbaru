@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -29,7 +30,7 @@ export function LoginForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
+  } = useForm<z.input<typeof loginSchema>>({
     defaultValues: {
       username: "",
       password: "",
@@ -43,20 +44,54 @@ export function LoginForm() {
     setError(null);
     const { username, password } = values;
 
-    // Try to login with username as email (Supabase uses email)
-    // In production, you might need to query user by username first
+    // Izinkan login dengan email atau username
+    let email = username;
+    if (!username.includes("@")) {
+      const resp = await fetch("/api/resolve-identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: username }),
+      });
+      if (!resp.ok) {
+        setError("Username tidak ditemukan. Gunakan email terdaftar.");
+        setLoading(false);
+        return;
+      }
+      const data = (await resp.json()) as { email?: string };
+      email = data.email ?? "";
+      if (!email) {
+        setError("Username tidak ditemukan. Gunakan email terdaftar.");
+        setLoading(false);
+        return;
+      }
+    }
+
     const result = await supabase.auth.signInWithPassword({
-      email: username.includes("@") ? username : `${username}@temp.local`, // Temporary workaround
+      email,
       password,
     });
 
     if (result.error) {
-      setError("Username atau password salah.");
+      setError(result.error.message || "Username atau password salah.");
       setLoading(false);
       return;
     }
 
-    // Redirect based on source or default to dashboard
+    // Setelah login, pastikan user menjadi admin jika belum, lalu refresh session
+    if (!source || !source.startsWith("/")) {
+      const roles = result.data.user?.app_metadata?.roles as string[] | undefined;
+      const isAdmin = !!roles && roles.includes("site_admin");
+      if (!isAdmin) {
+        const token = result.data.session?.access_token;
+        await fetch("/api/grant-admin", {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        await supabase.auth.refreshSession();
+      }
+    }
+
+    // Redirect
     if (source && source.startsWith("/")) {
       router.push(source);
     } else {
@@ -80,14 +115,14 @@ export function LoginForm() {
         <div className="space-y-1">
           <Label htmlFor="username">
             <span className="label">
-              Username
+              Email
               <span className="text-[#b91c1c]" aria-hidden="true">*</span>
               <span className="sr-only">Required</span>
             </span>
           </Label>
           <Input
             id="username"
-            type="text"
+            type="email"
             autoComplete="username"
             maxLength={32}
             required

@@ -36,6 +36,11 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         href: "/admin/site-settings/site-setup",
         description: "Atur preferensi dan konfigurasi situs secara global.",
       },
+      {
+        label: "Next Steps",
+        href: "https://docs.pkp.sfu.ca/learning-ojs/3.3/en/site-administration#next-steps",
+        description: "Panduan langkah berikutnya untuk konfigurasi Site Admin.",
+      },
     ],
   },
   {

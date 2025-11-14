@@ -35,8 +35,8 @@ export default async function HostedJournalsPage() {
           </span>
         }
         crumbs={[
-          { label: "HOME", href: "/admin/site-management" },
-          { label: "ADMINISTRATION", href: "/admin/site-management" },
+          { label: "HOME", href: "/admin/dashboard" },
+          { label: "ADMINISTRATION", href: "/admin/dashboard" },
           { label: "HOSTED JOURNALS" },
         ]}
       />

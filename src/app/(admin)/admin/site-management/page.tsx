@@ -16,10 +16,7 @@ export default function SiteManagementOverviewPage() {
       <PageHeader
         title="Site Administration"
         subtitle="Kelola jurnal yang di-host dan akses fungsi administratif untuk instalasi OJS Anda."
-        crumbs={[
-          { label: "HOME", href: "/admin/site-management" },
-          { label: "ADMINISTRATION" },
-        ]}
+        showBreadcrumbs={false}
       />
 
       {siteManagement && (
