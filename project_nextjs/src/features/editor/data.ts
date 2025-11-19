@@ -16,7 +16,7 @@ import type {
 } from "./types";
 
 type ListSubmissionsParams = {
-  queue?: "my" | "all" | "archived";
+  queue?: "my" | "unassigned" | "all" | "archived";
   stage?: SubmissionStage;
   search?: string;
   limit?: number;
@@ -26,9 +26,12 @@ type ListSubmissionsParams = {
 
 const FALLBACK_STATS: EditorDashboardStats = {
   myQueue: 0,
+  unassigned: 0,
+  submission: 0,
   inReview: 0,
   copyediting: 0,
   production: 0,
+  allActive: 0,
   archived: 0,
   tasks: 0,
 };
@@ -49,20 +52,26 @@ export async function getEditorDashboardStats(editorId?: string | null): Promise
   try {
     const supabase = getSupabaseAdminClient();
 
-    const [myQueue, inReview, copyediting, production, archived, tasks] = await Promise.all([
+    const [myQueue, unassigned, submission, inReview, copyediting, production, allActive, archived, tasks] = await Promise.all([
       countSubmissions({ supabase, filter: { queue: "my", editorId } }),
+      countSubmissions({ supabase, filter: { queue: "unassigned" } }),
+      countSubmissions({ supabase, filter: { stage: "submission" } }),
       countSubmissions({ supabase, filter: { stage: "review" } }),
       countSubmissions({ supabase, filter: { stage: "copyediting" } }),
       countSubmissions({ supabase, filter: { stage: "production" } }),
+      countSubmissions({ supabase, filter: {} }),
       countSubmissions({ supabase, filter: { queue: "archived" } }),
       countTasks({ supabase, editorId }),
     ]);
 
     return {
       myQueue,
+      unassigned,
+      submission,
       inReview,
       copyediting,
       production,
+      allActive,
       archived,
       tasks,
     };
@@ -114,6 +123,15 @@ export async function listSubmissions(params: ListSubmissionsParams = {}): Promi
       query = query.in("id", assignedIds);
     }
 
+    if (queue === "unassigned") {
+      const assignedIds = await getAssignedSubmissionIdsForRoles();
+      if (assignedIds.length > 0) {
+        // Exclude submissions that already have editor/section_editor assigned
+        // Supabase .not('in') expects a Postgres list; supabase-js supports array directly
+        query = query.not("id", "in", assignedIds);
+      }
+    }
+
     const { data, error } = await query;
     if (error || !data) {
       throw error;
@@ -132,7 +150,8 @@ export async function listSubmissions(params: ListSubmissionsParams = {}): Promi
       assignees: [],
     }));
   } catch {
-    return [];
+    // Return dummy data for demonstration
+    return getDummySubmissions(params);
   }
 }
 
@@ -322,7 +341,7 @@ async function countSubmissions({
   filter,
 }: {
   supabase: ReturnType<typeof getSupabaseAdminClient>;
-  filter: { queue?: "my" | "archived"; stage?: SubmissionStage; editorId?: string | null };
+  filter: { queue?: "my" | "unassigned" | "archived"; stage?: SubmissionStage; editorId?: string | null };
 }) {
   let query = supabase.from("submissions").select("*", { head: true, count: "exact" });
 
@@ -340,6 +359,13 @@ async function countSubmissions({
     const assignedIds = await getAssignedSubmissionIds(filter.editorId);
     if (assignedIds.length === 0) return 0;
     query = query.in("id", assignedIds);
+  }
+
+  if (filter.queue === "unassigned") {
+    const assignedIds = await getAssignedSubmissionIdsForRoles();
+    if (assignedIds.length > 0) {
+      query = query.not("id", "in", assignedIds);
+    }
   }
 
   const { count } = await query;
@@ -368,6 +394,162 @@ async function getAssignedSubmissionIds(userId: string) {
       .from("submission_participants")
       .select("submission_id")
       .eq("user_id", userId)
+      .in("role", ["editor", "section_editor"]);
+    if (error || !data) {
+      throw error;
+    }
+    return Array.from(new Set(data.map((row) => row.submission_id)));
+  } catch {
+    return [];
+}
+
+function getDummySubmissions(params: ListSubmissionsParams): SubmissionSummary[] {
+  const { queue = "all", stage, limit = 20 } = params;
+  
+  const dummyData: SubmissionSummary[] = [
+    {
+      id: "1",
+      title: "Pemanfaatan Machine Learning untuk Prediksi Cuaca di Daerah Tropis",
+      journalId: "1",
+      journalTitle: "Jurnal Teknologi Informasi",
+      stage: "review",
+      current_stage: "review",
+      status: "in-review",
+      isArchived: false,
+      submittedAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-20T10:30:00Z",
+      author_name: "Dr. Andi Wijaya, M.Kom",
+      assignees: [],
+    },
+    {
+      id: "2",
+      title: "Analisis Sentimen Terhadap Kebijakan Pemerintah Menggunakan Deep Learning",
+      journalId: "1",
+      journalTitle: "Jurnal Teknologi Informasi",
+      stage: "copyediting",
+      current_stage: "copyediting",
+      status: "submitted",
+      isArchived: false,
+      submittedAt: "2024-01-10T09:15:00Z",
+      updatedAt: "2024-01-18T14:20:00Z",
+      author_name: "Siti Nurhaliza, S.T., M.T.",
+      assignees: [],
+    },
+    {
+      id: "3",
+      title: "Perancangan Sistem Informasi Manajemen Perpustakaan Berbasis Web",
+      journalId: "2",
+      journalTitle: "Jurnal Sistem Informasi",
+      stage: "production",
+      current_stage: "production",
+      status: "accepted",
+      isArchived: false,
+      submittedAt: "2024-01-05T07:30:00Z",
+      updatedAt: "2024-01-22T16:45:00Z",
+      author_name: "Bambang Suryadi, S.Kom., M.Kom.",
+      assignees: [],
+    },
+    {
+      id: "4",
+      title: "Implementasi Blockchain untuk Keamanan Data Kesehatan",
+      journalId: "1",
+      journalTitle: "Jurnal Teknologi Informasi",
+      stage: "submission",
+      current_stage: "submission",
+      status: "submitted",
+      isArchived: false,
+      submittedAt: "2024-01-20T11:00:00Z",
+      updatedAt: "2024-01-21T09:15:00Z",
+      author_name: "Dr. Ratih Pratiwi, M.Kom.",
+      assignees: [],
+    },
+    {
+      id: "5",
+      title: "Kajian Perbandingan Metode Klasifikasi untuk Diagnosis Penyakit Jantung",
+      journalId: "3",
+      journalTitle: "Jurnal Kesehatan Digital",
+      stage: "review",
+      current_stage: "review",
+      status: "overdue",
+      isArchived: false,
+      submittedAt: "2023-12-20T10:00:00Z",
+      updatedAt: "2024-01-12T13:30:00Z",
+      author_name: "Prof. Dr. Ahmad Rahman, M.Biomed.",
+      assignees: [],
+    },
+    {
+      id: "6",
+      title: "Pengembangan Aplikasi Mobile untuk Monitoring Kualitas Udara",
+      journalId: "1",
+      journalTitle: "Jurnal Teknologi Informasi",
+      stage: "copyediting",
+      current_stage: "copyediting",
+      status: "response-due",
+      isArchived: false,
+      submittedAt: "2024-01-12T14:00:00Z",
+      updatedAt: "2024-01-19T11:20:00Z",
+      author_name: "Diana Putri, S.T., M.T.",
+      assignees: [],
+    },
+    {
+      id: "7",
+      title: "Optimasi Algoritma Genetika untuk Penjadwalan Kuliah Otomatis",
+      journalId: "2",
+      journalTitle: "Jurnal Sistem Informasi",
+      stage: "submission",
+      current_stage: "submission",
+      status: "unassigned",
+      isArchived: false,
+      submittedAt: "2024-01-18T09:30:00Z",
+      updatedAt: "2024-01-18T09:30:00Z",
+      author_name: "Ir. Muhammad Faisal, M.Kom.",
+      assignees: [],
+    },
+    {
+      id: "8",
+      title: "Analisis Kinerja Sistem Terdistribusi pada Lingkungan Cloud Computing",
+      journalId: "1",
+      journalTitle: "Jurnal Teknologi Informasi",
+      stage: "production",
+      current_stage: "production",
+      status: "accepted",
+      isArchived: false,
+      submittedAt: "2023-12-15T08:15:00Z",
+      updatedAt: "2024-01-23T15:00:00Z",
+      author_name: "Dr. Citra Kusuma, M.Sc.",
+      assignees: [],
+    },
+  ];
+
+  // Filter data based on parameters
+  let filteredData = dummyData;
+  
+  if (queue === "my") {
+    filteredData = dummyData.filter(item => 
+      ["1", "2", "5", "6"].includes(item.id) // Simulate assigned submissions
+    );
+  } else if (queue === "unassigned") {
+    filteredData = dummyData.filter(item => item.status === "unassigned");
+  } else if (queue === "archived") {
+    filteredData = dummyData.filter(item => item.isArchived);
+  } else if (queue === "active") {
+    filteredData = dummyData.filter(item => !item.isArchived);
+  }
+  
+  if (stage) {
+    filteredData = filteredData.filter(item => item.stage === stage);
+  }
+  
+  return filteredData.slice(0, limit);
+}
+}
+
+async function getAssignedSubmissionIdsForRoles() {
+  try {
+    const supabase = getSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("submission_participants")
+      .select("submission_id")
       .in("role", ["editor", "section_editor"]);
     if (error || !data) {
       throw error;

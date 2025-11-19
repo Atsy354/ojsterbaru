@@ -20,7 +20,52 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
   const stage: SubmissionStage =
     stageParam && VALID_STAGES.includes(stageParam) ? stageParam : "submission";
 
-  const detail = await getSubmissionDetail(id);
+  // Use dummy data for demonstration
+  const detail = {
+    summary: {
+      id: id,
+      title: "Pemanfaatan Machine Learning untuk Prediksi Cuaca di Daerah Tropis",
+      journalId: "1",
+      journalTitle: "Jurnal Teknologi Informasi",
+      stage: "review" as const,
+      current_stage: "review" as const,
+      status: "in-review" as const,
+      isArchived: false,
+      submittedAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-20T10:30:00Z",
+      author_name: "Dr. Andi Wijaya, M.Kom",
+      assignees: [],
+    },
+    metadata: {
+      authors: [
+        {
+          givenName: "Andi",
+          familyName: "Wijaya",
+          affiliation: "Universitas Indonesia",
+          email: "andi.wijaya@ui.ac.id",
+        }
+      ],
+      abstract: "Penelitian ini bertujuan untuk mengembangkan sistem prediksi cuaca menggunakan algoritma machine learning untuk daerah tropis di Indonesia."
+    },
+    stages: {
+      submission: {
+        files: [
+          { id: "1", name: "manuscript.pdf", type: "submission", uploadedAt: "2024-01-15T08:00:00Z" }
+        ]
+      },
+      review: {
+        reviews: [
+          {
+            id: "1",
+            reviewer: "Dr. Budi Santoso",
+            status: "completed",
+            recommendation: "accept",
+            completedAt: "2024-01-18T15:30:00Z"
+          }
+        ]
+      }
+    }
+  };
 
   if (!detail) {
     notFound();

@@ -3,7 +3,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 import { isPublicEnvValid, publicEnv } from "../env";
 
-export function createSupabaseServerClient() {
+export async function createSupabaseServerClient() {
   if (!isPublicEnvValid) {
     throw new Error(
       "Supabase environment (URL/anon key) belum dikonfigurasi. Cek file .env.",
@@ -11,7 +11,7 @@ export function createSupabaseServerClient() {
   }
 
   // Get cookies instance - call it once per request
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
@@ -20,34 +20,22 @@ export function createSupabaseServerClient() {
       cookies: {
         get(name: string) {
           try {
-            const getter = (cookieStore as unknown as { get?: (n: string) => { value?: string } | undefined }).get;
-            if (typeof getter === "function") {
-              const cookie = getter.call(cookieStore, name);
-              return cookie?.value;
-            }
+            const cookie = cookieStore.get(name);
+            return cookie?.value;
           } catch {}
           return undefined;
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            const setter = (cookieStore as unknown as { set?: (n: string, v: string, o: CookieOptions) => void }).set;
-            if (typeof setter === "function") {
-              setter.call(cookieStore, name, value, options);
-            }
+            cookieStore.set(name, value, options);
           } catch {}
         },
         remove(name: string, options: CookieOptions) {
           try {
-            const deleter = (cookieStore as unknown as { delete?: (n: string) => void }).delete;
-            if (typeof deleter === "function") {
-              deleter.call(cookieStore, name);
-              return;
-            }
-            const setter = (cookieStore as unknown as { set?: (n: string, v: string, o: CookieOptions) => void }).set;
-            if (typeof setter === "function") {
-              setter.call(cookieStore, name, "", options);
-            }
-          } catch {}
+            cookieStore.delete(name);
+          } catch {
+            cookieStore.set(name, "", options);
+          }
         },
       },
     },

@@ -16,18 +16,23 @@ export type SubmissionSummary = {
   journalId: string;
   journalTitle?: string;
   stage: SubmissionStage;
+  current_stage: SubmissionStage;
   status: SubmissionStatus;
   isArchived: boolean;
   submittedAt: string;
   updatedAt: string;
   assignees: string[];
+  author_name?: string;
 };
 
 export type EditorDashboardStats = {
   myQueue: number;
+  unassigned: number;
+  submission: number;
   inReview: number;
   copyediting: number;
   production: number;
+  allActive: number;
   archived: number;
   tasks: number;
 };

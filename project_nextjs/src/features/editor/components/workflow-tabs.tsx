@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { WorkflowStageView } from "./workflow-stage-view";
+import { SubmissionWorkflowView } from "./submission-workflow-view";
 import { SubmissionActivityForm } from "./submission-activity-form";
 import type { SubmissionDetail, SubmissionStage } from "../types";
 
@@ -13,37 +15,66 @@ type Props = {
 };
 
 export function WorkflowTabs({ submissionId, detail, currentStage }: Props) {
-  const [activeTab, setActiveTab] = useState<"workflow" | "publication">("workflow");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const initialTab: "summary" | "review" | "copyediting" | "production" | "publication" =
+    (searchParams?.get("tab") === "publication")
+      ? "publication"
+      : currentStage === "submission"
+      ? "summary"
+      : (currentStage as "review" | "copyediting" | "production");
+  const [activeTab, setActiveTab] = useState<"summary" | "review" | "copyediting" | "production" | "publication">(initialTab);
+
+  const tabs: { key: "summary" | "review" | "copyediting" | "production" | "publication"; label: string }[] = [
+    { key: "summary", label: "Summary" },
+    { key: "review", label: "Review" },
+    { key: "copyediting", label: "Copyediting" },
+    { key: "production", label: "Production" },
+    { key: "publication", label: "Publication" },
+  ];
+
+  function navigate(tab: typeof tabs[number]["key"]) {
+    setActiveTab(tab);
+    if (tab === "publication") {
+      const params = new URLSearchParams(searchParams ?? undefined);
+      params.set("tab", "publication");
+      if (!params.get("stage")) params.set("stage", currentStage);
+      router.push(`?${params.toString()}`);
+      return;
+    }
+    const stage = tab === "summary" ? "submission" : tab;
+    const params = new URLSearchParams(searchParams ?? undefined);
+    params.delete("tab");
+    params.set("stage", stage);
+    router.push(`?${params.toString()}`);
+  }
 
   return (
     <div className="space-y-4">
       <div className="border-b border-[var(--border)] bg-white">
         <div className="flex">
-          <button
-            onClick={() => setActiveTab("workflow")}
-            className={`border-b-2 px-6 py-3 text-sm font-semibold transition ${
-              activeTab === "workflow"
-                ? "border-[var(--primary)] text-[var(--primary)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Workflow
-          </button>
-          <button
-            onClick={() => setActiveTab("publication")}
-            className={`border-b-2 px-6 py-3 text-sm font-semibold transition ${
-              activeTab === "publication"
-                ? "border-[var(--primary)] text-[var(--primary)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Publication
-          </button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => navigate(tab.key)}
+              className={`border-b-2 px-6 py-3 text-sm font-semibold transition ${
+                activeTab === tab.key
+                  ? "border-[var(--primary)] text-[var(--primary)]"
+                  : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-white p-6 shadow-sm">
-        {activeTab === "workflow" && <WorkflowStageView detail={detail} stage={currentStage} />}
+        {activeTab === "summary" && <SubmissionWorkflowView detail={detail} />}
+        {activeTab === "review" && <WorkflowStageView detail={detail} stage={"review"} />}
+        {activeTab === "copyediting" && <WorkflowStageView detail={detail} stage={"copyediting"} />}
+        {activeTab === "production" && <WorkflowStageView detail={detail} stage={"production"} />}
         {activeTab === "publication" && (
           <div className="space-y-6">
             <div>

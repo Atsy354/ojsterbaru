@@ -11,7 +11,7 @@ const SYSTEM_LINKS = [
   { href: "/admin/system/clear-template-cache", label: "Clear Template Cache" },
   {
     href: "/admin/system/clear-scheduled-tasks",
-    label: "Clear Scheduled Task Logs",
+    label: "Clear Scheduled Task Execution Logs",
   },
 ];
 
@@ -23,38 +23,20 @@ export default function SystemLayout({ children }: Props) {
   const pathname = usePathname();
 
   return (
-    <section className="space-y-8">
-      <header className="space-y-4">
-        <nav className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-          <Link href="/admin/dashboard" className="hover:text-[var(--primary-dark)]">
-            Home
-          </Link>{" "}
-          /{" "}
-          <Link href="/admin/dashboard" className="hover:text-[var(--primary-dark)]">
-            Administration
-          </Link>{" "}
-          / Administrative Functions
-        </nav>
-        <h1 className="text-3xl font-semibold text-[var(--foreground)]">
-          Administrative Functions
-        </h1>
-        <p className="text-sm text-[var(--muted)]">
-          Akses informasi sistem dan jalankan utilitas pemeliharaan.
-        </p>
-      </header>
-
+    <div className="bg-white rounded p-6">
+      <div className="border-b border-gray-200 pb-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Administrative Functions</h1>
+      </div>
       <div className="grid gap-4 md:grid-cols-[250px_1fr]">
-        <aside className="space-y-2 rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm">
+        <aside className="space-y-2 rounded border border-gray-200 bg-white p-4">
           {SYSTEM_LINKS.map((link) => {
             const active = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`block rounded-md px-3 py-2 text-sm font-semibold transition ${
-                  active
-                    ? "bg-[var(--primary)] text-white shadow-sm"
-                    : "text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+                className={`block px-3 py-2 text-sm ${
+                  active ? "text-[#006798] font-semibold" : "text-[#006798] hover:underline"
                 }`}
               >
                 {link.label}
@@ -62,11 +44,10 @@ export default function SystemLayout({ children }: Props) {
             );
           })}
         </aside>
-        <div className="rounded-lg border border-[var(--border)] bg-white p-8 shadow-sm">
+        <div className="rounded border border-gray-200 bg-white p-6">
           {children}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
-

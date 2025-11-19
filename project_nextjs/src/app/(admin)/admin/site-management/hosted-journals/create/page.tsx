@@ -18,7 +18,12 @@ export default function CreateJournalPage() {
       <PageHeader
         title="Create Journal"
         subtitle="Isi formulir berikut untuk membuat jurnal baru dalam instalasi OJS Anda."
-        showBreadcrumbs={false}
+        crumbs={[
+          { label: "HOME", href: "/admin/dashboard" },
+          { label: "ADMINISTRATION", href: "/admin/dashboard" },
+          { label: "HOSTED JOURNALS", href: "/admin/site-management/hosted-journals" },
+          { label: "CREATE JOURNAL" },
+        ]}
       />
 
   <div className="rounded-lg border border-[var(--border)] bg-white p-8 shadow-sm">

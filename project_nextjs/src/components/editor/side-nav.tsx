@@ -7,7 +7,8 @@ const NAV_SECTIONS = [
   {
     label: "Workflow",
     items: [
-      { label: "Dashboard", href: "/editor/dashboard" },
+      { label: "Dashboard", href: "/editor" },
+      { label: "Unassigned", href: "/editor/submissions?queue=unassigned" },
       { label: "My Queue", href: "/editor/submissions?queue=my" },
       { label: "All Active", href: "/editor/submissions" },
       { label: "Archived", href: "/editor/submissions?queue=archived" },
@@ -21,6 +22,26 @@ const NAV_SECTIONS = [
       { label: "Review", href: "/editor/submissions?stage=review" },
     ],
   },
+  {
+    label: "Management",
+    items: [
+      { label: "Issues", href: "/editor/issues" },
+      { label: "Announcements", href: "/editor/announcements" },
+      { label: "Settings: Workflow", href: "/editor/settings/workflow" },
+      { label: "Settings: Website", href: "/editor/settings/website" },
+      { label: "Settings: Distribution", href: "/editor/settings/distribution" },
+      { label: "Users & Roles", href: "/editor/users-roles" },
+      { label: "Tools", href: "/editor/tools" },
+    ],
+  },
+  {
+    label: "Statistics",
+    items: [
+      { label: "Editorial", href: "/editor/statistics/editorial" },
+      { label: "Publications", href: "/editor/statistics/publications" },
+      { label: "Users", href: "/editor/statistics/users" },
+    ],
+  },
 ];
 
 export function EditorSideNav() {
@@ -28,31 +49,38 @@ export function EditorSideNav() {
   const searchParams = useSearchParams();
 
   return (
-    <aside className="hidden w-72 flex-col border-r border-[var(--border)] bg-[#102940] text-white lg:flex">
-      <div className="px-6 py-6">
-        <div className="text-lg font-semibold tracking-wide">Editorial Workflow</div>
-        <p className="text-sm text-white/70">Kelola submission lintas tahap.</p>
-      </div>
-      <nav className="flex-1 space-y-6 px-6 pb-8">
+    <aside className="pkp_structure_sidebar" style={{padding: '1rem'}}>
+      <nav className="pkp_nav">
         {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">{section.label}</p>
-            <div className="mt-2 space-y-1">
+          <div key={section.label} className="pkp_nav_group" style={{marginBottom: '1.5rem'}}>
+            <h4 className="pkp_nav_group_title" style={{fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)'}}>
+              {section.label}
+            </h4>
+            <ul className="pkp_nav_list" style={{listStyle: 'none', margin: 0, padding: 0}}>
               {section.items.map((item) => {
                 const active = isActive(pathname, searchParams?.toString() ?? "", item.href);
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block rounded-md px-3 py-2 text-sm font-semibold transition ${
-                      active ? "bg-white text-[#102940]" : "text-white/80 hover:bg-white/10"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
+                  <li key={item.href} style={{margin: 0}}>
+                    <Link
+                      href={item.href}
+                      className="pkp_nav_link"
+                      style={{
+                        display: 'block',
+                        padding: '0.5rem 0',
+                        color: active ? 'white' : 'rgba(255,255,255,0.9)',
+                        textDecoration: 'none',
+                        fontSize: '0.875rem',
+                        borderLeft: active ? '3px solid white' : 'none',
+                        paddingLeft: active ? '0.75rem' : '1rem',
+                        backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent'
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
         ))}
       </nav>

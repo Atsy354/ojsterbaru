@@ -191,49 +191,4 @@ async function saveSection(journalId: string, section: keyof JournalSettings, pa
       throw new Error("Bagian pengaturan tidak dikenali.");
   }
 }
-import { NextResponse } from "next/server";
-
-import {
-  getJournalSettings,
-  updateJournalSettingsSection,
-} from "@/app/(admin)/admin/site-management/hosted-journals/actions";
-
-type RouteContext = {
-  params: Promise<{ journalId: string }>;
-};
-
-export async function GET(_request: Request, context: RouteContext) {
-  try {
-    const { journalId } = await context.params;
-    const settings = await getJournalSettings(journalId);
-    return NextResponse.json({ ok: true, settings });
-  } catch (error) {
-    return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Jurnal tidak ditemukan." },
-      { status: 404 },
-    );
-  }
-}
-
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const { journalId } = await context.params;
-    const body = await request.json();
-    const section = body?.section;
-    const payload = body?.payload;
-
-    if (!section || !["context", "search", "theme", "restrictBulkEmails"].includes(section)) {
-      return NextResponse.json({ ok: false, message: "Bagian pengaturan tidak valid." }, { status: 400 });
-    }
-
-    const result = await updateJournalSettingsSection(journalId, section, payload);
-    if (!result.success) {
-      return NextResponse.json({ ok: false, message: result.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ ok: true, settings: result.settings });
-  } catch {
-    return NextResponse.json({ ok: false, message: "Tidak dapat menyimpan pengaturan jurnal." }, { status: 500 });
-  }
-}
 

@@ -4,6 +4,7 @@ import { SubmissionParticipantsPanel } from "./submission-participants-panel";
 import { SubmissionActivityForm } from "./submission-activity-form";
 import { SubmissionFileGrid } from "./submission-file-grid";
 import { ReviewRoundsPanel } from "./review-rounds-panel";
+import { SubmissionMetadataForm } from "./submission-metadata-form";
 import type { SubmissionDetail, SubmissionStage } from "../types";
 
 type Props = {
@@ -42,6 +43,17 @@ export function SubmissionWorkflowView({ detail }: Props) {
       <section className="space-y-4 rounded-lg border border-[var(--border)] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-[var(--foreground)]">Participants</h2>
         <SubmissionParticipantsPanel submissionId={summary.id} journalId={summary.journalId} />
+      </section>
+
+      <section className="space-y-4 rounded-lg border border-[var(--border)] bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-[var(--foreground)]">Metadata</h2>
+        <p className="text-sm text-[var(--muted)]">Edit judul, abstrak, dan kata kunci submission.</p>
+        <SubmissionMetadataForm
+          submissionId={summary.id}
+          initialTitle={summary.title}
+          initialAbstract={(detail.metadata as { abstract?: string | null } | null)?.abstract ?? null}
+          initialKeywords={(detail.metadata as { keywords?: string[] | null } | null)?.keywords ?? null}
+        />
       </section>
 
       <section className="space-y-4 rounded-lg border border-[var(--border)] bg-white p-6 shadow-sm">

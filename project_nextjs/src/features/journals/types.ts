@@ -63,6 +63,7 @@ export const JOURNAL_ROLE_OPTIONS = [
   { value: "editor", label: "Journal Editor" },
   { value: "section_editor", label: "Section Editor" },
   { value: "guest_editor", label: "Guest Editor" },
+  { value: "reviewer", label: "Reviewer" },
   { value: "copyeditor", label: "Copyeditor" },
   { value: "proofreader", label: "Proofreader" },
   { value: "author", label: "Author" },

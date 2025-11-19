@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { TopBar } from "@/components/admin/top-bar";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Props = {
   children: ReactNode;
@@ -14,47 +14,27 @@ type Props = {
 // Layout khusus untuk submission detail - full screen tanpa sidebar
 export default function SubmissionDetailLayout({ children }: Props) {
   const router = useRouter();
-  const supabase = getSupabaseBrowserClient();
+  const { user, loading } = useAuth();
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    let unsub: { unsubscribe: () => void } | null = null;
-    const ensureEditor = async () => {
-      const { data } = await supabase.auth.getSession();
-      const user = data.session?.user ?? null;
-      if (!user) {
-        setAuthorized(false);
-        router.replace("/login?source=/editor/dashboard");
-        return;
-      }
-      const roles = (user.app_metadata as { roles?: string[] })?.roles ?? [];
-      const canEdit = roles.includes("editor") || roles.includes("site_admin");
-      if (!canEdit) {
-        setAuthorized(false);
-        router.replace("/");
-        return;
-      }
-      setAuthorized(true);
-    };
-
-    ensureEditor();
-    unsub = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user ?? null;
-      if (!user) {
-        setAuthorized(false);
-        router.replace("/login?source=/editor/dashboard");
-        return;
-      }
-      const roles = (user.app_metadata as { roles?: string[] })?.roles ?? [];
-      const canEdit = roles.includes("editor") || roles.includes("site_admin");
-      setAuthorized(canEdit);
-      if (!canEdit) {
-        router.replace("/");
-      }
-    }).data.subscription;
-
-    return () => unsub?.unsubscribe();
-  }, [router, supabase]);
+    if (loading) {
+      setAuthorized(null);
+      return;
+    }
+    if (!user) {
+      setAuthorized(false);
+      router.replace("/login?source=/editor");
+      return;
+    }
+    const canEdit = user.roles?.some(r => r.role_path === "editor" || r.role_path === "admin");
+    if (!canEdit) {
+      setAuthorized(false);
+      router.replace("/dashboard");
+      return;
+    }
+    setAuthorized(true);
+  }, [user, loading, router]);
 
   if (authorized === null) {
     return <div className="min-h-screen bg-[var(--surface-muted)]" />;

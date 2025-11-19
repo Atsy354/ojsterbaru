@@ -12,12 +12,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSupabase } from "@/providers/supabase-provider";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { loginSchema, type LoginFormValues } from "../schemas";
 
 export function LoginForm() {
-  const supabase = useSupabase();
+  const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -44,58 +44,23 @@ export function LoginForm() {
     setError(null);
     const { username, password } = values;
 
-    // Izinkan login dengan email atau username
-    let email = username;
-    if (!username.includes("@")) {
-      const resp = await fetch("/api/resolve-identity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: username }),
-      });
-      if (!resp.ok) {
-        setError("Username tidak ditemukan. Gunakan email terdaftar.");
-        setLoading(false);
-        return;
+    try {
+      // For testing, use email directly
+      // In production, you might want to resolve username to email
+      const email = username.includes("@") ? username : `${username}@example.com`;
+      
+      await login(email, password);
+      
+      // Redirect based on role or source
+      if (source && source.startsWith("/")) {
+        router.push(source);
+      } else {
+        router.push("/dashboard");
       }
-      const data = (await resp.json()) as { email?: string };
-      email = data.email ?? "";
-      if (!email) {
-        setError("Username tidak ditemukan. Gunakan email terdaftar.");
-        setLoading(false);
-        return;
-      }
-    }
-
-    const result = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (result.error) {
-      setError(result.error.message || "Username atau password salah.");
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
       setLoading(false);
-      return;
-    }
-
-    // Setelah login, pastikan user menjadi admin jika belum, lalu refresh session
-    if (!source || !source.startsWith("/")) {
-      const roles = result.data.user?.app_metadata?.roles as string[] | undefined;
-      const isAdmin = !!roles && roles.includes("site_admin");
-      if (!isAdmin) {
-        const token = result.data.session?.access_token;
-        await fetch("/api/grant-admin", {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
-        await supabase.auth.refreshSession();
-      }
-    }
-
-    // Redirect
-    if (source && source.startsWith("/")) {
-      router.push(source);
-    } else {
-      router.push("/admin/dashboard");
     }
   });
 

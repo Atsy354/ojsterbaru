@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
+import { Noto_Sans } from "next/font/google";
 
 import "./globals.css";
 import { AppProviders } from "./providers";
 
-const openSans = Open_Sans({
+const notoSans = Noto_Sans({
   subsets: ["latin"],
-  variable: "--font-open-sans",
+  variable: "--font-noto-sans",
   display: "swap",
 });
 
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${openSans.variable} bg-[var(--background)] antialiased`}>
+      <body className={`${notoSans.variable} bg-[var(--background)] antialiased`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

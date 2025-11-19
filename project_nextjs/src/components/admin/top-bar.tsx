@@ -23,7 +23,7 @@ export function TopBar() {
   >([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [showLogo, setShowLogo] = useState<boolean>(false);
-  const [headerBg, setHeaderBg] = useState<string>("#0a2d44");
+  const [headerBg, setHeaderBg] = useState<string>("#1e40af"); // Warna biru OJS
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -73,10 +73,10 @@ export function TopBar() {
           .single();
         const lu = (s as { logo_url?: string } | null)?.logo_url ?? null;
         const sl = Boolean((a as { show_logo?: boolean } | null)?.show_logo);
-        const hb = (a as { header_bg?: string } | null)?.header_bg ?? "#0a2d44";
+        const hb = (a as { header_bg?: string } | null)?.header_bg ?? "#1e40af";
         setLogoUrl(lu && lu.length ? lu : null);
         setShowLogo(sl);
-        setHeaderBg(hb && hb.length ? hb : "#0a2d44");
+        setHeaderBg(hb && hb.length ? hb : "#1e40af"); // Default warna biru OJS
       } catch {}
     };
     fetchBranding();
@@ -88,8 +88,8 @@ export function TopBar() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-transparent px-6 shadow-sm text-white" style={{ backgroundColor: headerBg }}>
-      <div className="flex items-center gap-4">
+    <header className="app__header flex h-16 items-center justify-between border-b border-transparent px-6 shadow-sm" style={{ backgroundColor: headerBg, color: 'white' }}>
+      <div className="app__contextTitle flex items-center gap-4">
         <div className="flex items-center gap-2">
           {showLogo && logoUrl ? (
             <Link href="/admin/dashboard" className="block">
@@ -128,15 +128,16 @@ export function TopBar() {
       </div>
 
       {user && (
-        <div className="flex items-center gap-4">
+        <div className="app__headerAction flex items-center gap-4">
           {/* Tasks Button */}
           <Button
             variant="ghost"
             size="sm"
-            className="relative gap-2 text-white hover:bg-white/10">
-            <Bell size={16} />
+            className="app__headerAction relative gap-2 text-white hover:bg-white/10"
+            style={{color: 'white'}}>
+            <Bell size={16} style={{color: 'white'}} />
             <span className="sr-only">Tasks</span>
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-semibold text-white">
+            <span className="app__tasksCount absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-semibold text-white">
               0
             </span>
           </Button>
@@ -145,14 +146,14 @@ export function TopBar() {
           <Dropdown
             button={
               <>
-                <UserCircle size={18} />
-                <span className="sr-only">{user.email}</span>
+                <UserCircle size={18} style={{color: 'white'}} />
+                <span className="sr-only" style={{color: 'white'}}>{user.email}</span>
               </>
             }
             align="right">
             <DropdownSection>
               {user.email && (
-                <div className="px-4 py-2 text-xs font-semibold text-[var(--muted)]">
+                <div className="px-4 py-2 text-xs font-semibold" style={{color: '#333'}}>
                   {user.email}
                 </div>
               )}
@@ -178,10 +179,10 @@ export function TopBar() {
           <Dropdown
             button={
               <>
-                <span className="flex items-center gap-1 text-white">
-                  <Languages size={16} />
+                <span className="flex items-center gap-1" style={{color: 'white'}}>
+                  <Languages size={16} style={{color: 'white'}} />
                   English
-                  <ChevronDown size={14} />
+                  <ChevronDown size={14} style={{color: 'white'}} />
                 </span>
               </>
             }
@@ -193,7 +194,8 @@ export function TopBar() {
           </Dropdown>
           <Link
             href="/login"
-            className="text-sm font-semibold text-white hover:text-white/80">
+            className="text-sm font-semibold hover:text-white/80"
+            style={{color: 'white'}}>
             Sign in
           </Link>
         </div>
