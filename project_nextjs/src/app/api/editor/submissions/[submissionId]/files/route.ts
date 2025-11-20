@@ -87,8 +87,8 @@ export async function POST(request: Request, context: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteContext) {
-  const submissionId = (await params).submissionId;
+export async function DELETE(request: NextRequest, context: RouteParams) {
+  const { submissionId } = await context.params;
   if (!submissionId) {
     return NextResponse.json({ ok: false, message: "Submission tidak ditemukan." }, { status: 400 });
   }
