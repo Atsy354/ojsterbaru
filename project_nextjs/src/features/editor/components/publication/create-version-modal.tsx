@@ -182,8 +182,35 @@ export function CreateVersionModal({ open, onClose, submissionId, currentVersion
             />
           </div>
 
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "0.75rem",
+              paddingTop: "1rem",
+              borderTop: "1px solid #e5e5e5",
+            }}
+          >
+            <PkpButton
+              type="button"
+              variant="onclick"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </PkpButton>
+            <PkpButton
+              type="submit"
+              variant="primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating..." : "Create Version"}
+            </PkpButton>
+          </div>
         </form>
-    </PkpModal>
+      </div>
+    </div>
   );
 }
 

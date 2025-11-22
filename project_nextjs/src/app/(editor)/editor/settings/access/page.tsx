@@ -344,12 +344,14 @@ export default function SettingsAccessPage() {
                     Registration Options
                   </h3>
                   <div style={{ marginBottom: "1rem" }}>
-                    <PkpCheckbox
-                      id="allowRegistrations"
-                      checked={siteAccess.allowRegistrations}
-                      onChange={(e) => setSiteAccess({ ...siteAccess, allowRegistrations: e.target.checked })}
-                      label="Allow user self-registration"
-                    />
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <PkpCheckbox
+                        id="allowRegistrations"
+                        checked={siteAccess.allowRegistrations}
+                        onChange={(e) => setSiteAccess({ ...siteAccess, allowRegistrations: e.target.checked })}
+                      />
+                      Allow user self-registration
+                    </label>
                     <p style={{
                       fontSize: "0.75rem",
                       color: "rgba(0, 0, 0, 0.54)",
@@ -360,12 +362,14 @@ export default function SettingsAccessPage() {
                     </p>
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
-                    <PkpCheckbox
-                      id="requireReviewerInterests"
-                      checked={siteAccess.requireReviewerInterests}
-                      onChange={(e) => setSiteAccess({ ...siteAccess, requireReviewerInterests: e.target.checked })}
-                      label="Require reviewers to indicate their review interests"
-                    />
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <PkpCheckbox
+                        id="requireReviewerInterests"
+                        checked={siteAccess.requireReviewerInterests}
+                        onChange={(e) => setSiteAccess({ ...siteAccess, requireReviewerInterests: e.target.checked })}
+                      />
+                      Require reviewers to indicate their review interests
+                    </label>
                   </div>
                 </div>
 
@@ -379,12 +383,14 @@ export default function SettingsAccessPage() {
                     Login Options
                   </h3>
                   <div style={{ marginBottom: "1rem" }}>
-                    <PkpCheckbox
-                      id="allowRememberMe"
-                      checked={siteAccess.allowRememberMe}
-                      onChange={(e) => setSiteAccess({ ...siteAccess, allowRememberMe: e.target.checked })}
-                      label="Allow users to enable 'Remember Me' login option"
-                    />
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <PkpCheckbox
+                        id="allowRememberMe"
+                        checked={siteAccess.allowRememberMe}
+                        onChange={(e) => setSiteAccess({ ...siteAccess, allowRememberMe: e.target.checked })}
+                      />
+                      Allow users to enable 'Remember Me' login option
+                    </label>
                   </div>
                   <div style={{ marginBottom: "1rem" }}>
                     <label htmlFor="sessionLifetime" style={{
@@ -417,12 +423,14 @@ export default function SettingsAccessPage() {
                     Security
                   </h3>
                   <div style={{ marginBottom: "1rem" }}>
-                    <PkpCheckbox
-                      id="forceSSL"
-                      checked={siteAccess.forceSSL}
-                      onChange={(e) => setSiteAccess({ ...siteAccess, forceSSL: e.target.checked })}
-                      label="Force SSL connections"
-                    />
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <PkpCheckbox
+                        id="forceSSL"
+                        checked={siteAccess.forceSSL}
+                        onChange={(e) => setSiteAccess({ ...siteAccess, forceSSL: e.target.checked })}
+                      />
+                      Force SSL connections
+                    </label>
                     <p style={{
                       fontSize: "0.75rem",
                       color: "rgba(0, 0, 0, 0.54)",
