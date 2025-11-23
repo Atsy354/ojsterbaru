@@ -1,6 +1,12 @@
 "use client";
 
+import { useAssistantTasks } from "@/features/assistant/hooks/useAssistantTasks";
+import Link from "next/link";
+import { PkpTable, PkpTableHeader, PkpTableRow, PkpTableHead, PkpTableCell } from "@/components/ui/pkp-table";
+
 export default function AssistantTasksPage() {
+  const { tasks, loading, error } = useAssistantTasks();
+
   return (
     <div style={{
       width: "100%",
@@ -47,21 +53,87 @@ export default function AssistantTasksPage() {
         maxWidth: "100%",
         overflowX: "hidden",
       }}>
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '6px',
-          padding: '2rem',
-          textAlign: 'center',
-          color: '#666666',
-        }}>
-          <p style={{
-            fontSize: '0.9375rem',
-            margin: 0,
+        {loading ? (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '6px',
+            padding: '2rem',
+            textAlign: 'center',
+            color: '#666666',
           }}>
-            Tasks list will be displayed here. This page shows tasks assigned to you as an editorial assistant.
-          </p>
-        </div>
+            <p style={{ fontSize: '0.9375rem', margin: 0 }}>Loading tasks...</p>
+          </div>
+        ) : error ? (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '6px',
+            padding: '1.5rem',
+            color: '#856404',
+          }}>
+            <p style={{ fontSize: '0.9375rem', margin: 0 }}>Error: {error}</p>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '6px',
+            padding: '2rem',
+            textAlign: 'center',
+            color: '#666666',
+          }}>
+            <p style={{ fontSize: '0.9375rem', margin: 0 }}>
+              No tasks assigned to you yet.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '6px',
+            overflow: 'hidden',
+          }}>
+            <PkpTable>
+              <PkpTableHeader>
+                <PkpTableRow isHeader>
+                  <PkpTableHead>Submission</PkpTableHead>
+                  <PkpTableHead>Stage</PkpTableHead>
+                  <PkpTableHead>Status</PkpTableHead>
+                  <PkpTableHead>Updated</PkpTableHead>
+                  <PkpTableHead>Actions</PkpTableHead>
+                </PkpTableRow>
+              </PkpTableHeader>
+              <tbody>
+                {tasks.map((task) => (
+                  <PkpTableRow key={task.id}>
+                    <PkpTableCell>
+                      <Link
+                        href={`/editor/submissions/${task.submissionId}`}
+                        style={{ color: '#006798', textDecoration: 'none' }}
+                      >
+                        {task.submissionTitle}
+                      </Link>
+                    </PkpTableCell>
+                    <PkpTableCell>Stage {task.stage}</PkpTableCell>
+                    <PkpTableCell>{task.status}</PkpTableCell>
+                    <PkpTableCell>
+                      {task.updatedAt ? new Date(task.updatedAt).toLocaleDateString() : '-'}
+                    </PkpTableCell>
+                    <PkpTableCell>
+                      <Link
+                        href={`/editor/submissions/${task.submissionId}`}
+                        style={{ color: '#006798', textDecoration: 'none', fontSize: '0.875rem' }}
+                      >
+                        View
+                      </Link>
+                    </PkpTableCell>
+                  </PkpTableRow>
+                ))}
+              </tbody>
+            </PkpTable>
+          </div>
+        )}
       </div>
     </div>
   );

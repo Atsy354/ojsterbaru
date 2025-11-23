@@ -18,27 +18,7 @@ import {
   DUMMY_EMAIL_TEMPLATES,
 } from "@/features/editor/settings-dummy-data";
 import { USE_DUMMY } from "@/lib/dummy";
-
-// Helper function to load from localStorage
-const loadFromStorage = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  try {
-    const item = localStorage.getItem(`ojs_settings_${key}`);
-    return item ? JSON.parse(item) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-};
-
-// Helper function to save to localStorage
-const saveToStorage = (key: string, value: any) => {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(`ojs_settings_${key}`, JSON.stringify(value));
-  } catch (error) {
-    console.error("Failed to save to localStorage:", error);
-  }
-};
+import { useJournalSettings, useMigrateLocalStorageToDatabase } from "@/features/editor/hooks/useJournalSettings";
 
 export default function SettingsWorkflowPage() {
   const [activeTab, setActiveTab] = useState("submission");
@@ -46,146 +26,244 @@ export default function SettingsWorkflowPage() {
   const [activeReviewSubTab, setActiveReviewSubTab] = useState("reviewSetup");
   const [activeEmailSubTab, setActiveEmailSubTab] = useState("emailsSetup");
 
-  // Form states - Review Setup
+  // Database integration - Load settings from database
+  const reviewSetupSettings = useJournalSettings({
+    section: "workflow",
+    autoLoad: true,
+  });
+
+  const reviewerGuidanceSettings = useJournalSettings({
+    section: "workflow",
+    autoLoad: true,
+  });
+
+  const authorGuidelinesSettings = useJournalSettings({
+    section: "workflow",
+    autoLoad: true,
+  });
+
+  const emailSetupSettings = useJournalSettings({
+    section: "workflow",
+    autoLoad: true,
+  });
+
+  // Migrate localStorage to database (one-time)
+  const migrateReviewSetup = useMigrateLocalStorageToDatabase(
+    "workflow",
+    [
+      "reviewSetup_defaultReviewMode",
+      "reviewSetup_restrictReviewerFileAccess",
+      "reviewSetup_reviewerAccessKeysEnabled",
+      "reviewSetup_numWeeksPerResponse",
+      "reviewSetup_numWeeksPerReview",
+      "reviewSetup_numDaysBeforeInviteReminder",
+      "reviewSetup_numDaysBeforeSubmitReminder",
+    ]
+  );
+
+  const migrateReviewerGuidance = useMigrateLocalStorageToDatabase(
+    "workflow",
+    [
+      "reviewerGuidance_reviewGuidelines",
+      "reviewerGuidance_competingInterests",
+      "reviewerGuidance_showEnsuringLink",
+    ]
+  );
+
+  const migrateAuthorGuidelines = useMigrateLocalStorageToDatabase(
+    "workflow",
+    ["authorGuidelines"]
+  );
+
+  const migrateEmailSetup = useMigrateLocalStorageToDatabase(
+    "workflow",
+    ["emailSetup_emailSignature", "emailSetup_envelopeSender"]
+  );
+
+  // Run migration on mount
+  useEffect(() => {
+    migrateReviewSetup.migrate();
+    migrateReviewerGuidance.migrate();
+    migrateAuthorGuidelines.migrate();
+    migrateEmailSetup.migrate();
+  }, []);
+
+  // Form states - Review Setup (with defaults from database)
   const [reviewSetup, setReviewSetup] = useState({
-    defaultReviewMode: loadFromStorage("reviewSetup_defaultReviewMode", "doubleAnonymous"),
-    restrictReviewerFileAccess: loadFromStorage("reviewSetup_restrictReviewerFileAccess", false),
-    reviewerAccessKeysEnabled: loadFromStorage("reviewSetup_reviewerAccessKeysEnabled", false),
-    numWeeksPerResponse: loadFromStorage("reviewSetup_numWeeksPerResponse", "2"),
-    numWeeksPerReview: loadFromStorage("reviewSetup_numWeeksPerReview", "4"),
-    numDaysBeforeInviteReminder: loadFromStorage("reviewSetup_numDaysBeforeInviteReminder", "3"),
-    numDaysBeforeSubmitReminder: loadFromStorage("reviewSetup_numDaysBeforeSubmitReminder", "7"),
+    defaultReviewMode: "doubleAnonymous",
+    restrictReviewerFileAccess: false,
+    reviewerAccessKeysEnabled: false,
+    numWeeksPerResponse: "2",
+    numWeeksPerReview: "4",
+    numDaysBeforeInviteReminder: "3",
+    numDaysBeforeSubmitReminder: "7",
   });
 
   // Form states - Reviewer Guidance
   const [reviewerGuidance, setReviewerGuidance] = useState({
-    reviewGuidelines: loadFromStorage("reviewerGuidance_reviewGuidelines", ""),
-    competingInterests: loadFromStorage("reviewerGuidance_competingInterests", ""),
-    showEnsuringLink: loadFromStorage("reviewerGuidance_showEnsuringLink", false),
+    reviewGuidelines: "",
+    competingInterests: "",
+    showEnsuringLink: false,
   });
 
   // Form states - Author Guidelines
-  const [authorGuidelines, setAuthorGuidelines] = useState(
-    loadFromStorage("authorGuidelines", "")
-  );
+  const [authorGuidelines, setAuthorGuidelines] = useState("");
 
   // Form states - Email Setup
   const [emailSetup, setEmailSetup] = useState({
-    emailSignature: loadFromStorage("emailSetup_emailSignature", ""),
-    envelopeSender: loadFromStorage("emailSetup_envelopeSender", ""),
+    emailSignature: "",
+    envelopeSender: "",
   });
+
+  // Sync form states with database settings when loaded
+  useEffect(() => {
+    if (reviewSetupSettings.settings && Object.keys(reviewSetupSettings.settings).length > 0) {
+      const settings = reviewSetupSettings.settings as any;
+      setReviewSetup({
+        defaultReviewMode: settings.review_defaultReviewMode ?? reviewSetup.defaultReviewMode,
+        restrictReviewerFileAccess: settings.review_restrictReviewerFileAccess ?? reviewSetup.restrictReviewerFileAccess,
+        reviewerAccessKeysEnabled: settings.review_reviewerAccessKeysEnabled ?? reviewSetup.reviewerAccessKeysEnabled,
+        numWeeksPerResponse: settings.review_numWeeksPerResponse ?? reviewSetup.numWeeksPerResponse,
+        numWeeksPerReview: settings.review_numWeeksPerReview ?? reviewSetup.numWeeksPerReview,
+        numDaysBeforeInviteReminder: settings.review_numDaysBeforeInviteReminder ?? reviewSetup.numDaysBeforeInviteReminder,
+        numDaysBeforeSubmitReminder: settings.review_numDaysBeforeSubmitReminder ?? reviewSetup.numDaysBeforeSubmitReminder,
+      });
+    }
+  }, [reviewSetupSettings.settings]);
+
+  useEffect(() => {
+    if (reviewerGuidanceSettings.settings && Object.keys(reviewerGuidanceSettings.settings).length > 0) {
+      const settings = reviewerGuidanceSettings.settings as any;
+      setReviewerGuidance({
+        reviewGuidelines: settings.reviewerGuidance_reviewGuidelines ?? reviewerGuidance.reviewGuidelines,
+        competingInterests: settings.reviewerGuidance_competingInterests ?? reviewerGuidance.competingInterests,
+        showEnsuringLink: settings.reviewerGuidance_showEnsuringLink ?? reviewerGuidance.showEnsuringLink,
+      });
+    }
+  }, [reviewerGuidanceSettings.settings]);
+
+  useEffect(() => {
+    if (authorGuidelinesSettings.settings && Object.keys(authorGuidelinesSettings.settings).length > 0) {
+      const settings = authorGuidelinesSettings.settings as any;
+      setAuthorGuidelines(settings.authorGuidelines ?? "");
+    }
+  }, [authorGuidelinesSettings.settings]);
+
+  useEffect(() => {
+    if (emailSetupSettings.settings && Object.keys(emailSetupSettings.settings).length > 0) {
+      const settings = emailSetupSettings.settings as any;
+      setEmailSetup({
+        emailSignature: settings.emailSetup_emailSignature ?? emailSetup.emailSignature,
+        envelopeSender: settings.emailSetup_envelopeSender ?? emailSetup.envelopeSender,
+      });
+    }
+  }, [emailSetupSettings.settings]);
 
   // Feedback states
   const [feedback, setFeedback] = useState<{
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
-  const [saving, setSaving] = useState(false);
 
   // Save handlers
   const handleSaveReviewSetup = async () => {
-    setSaving(true);
+    // Validate
+    if (!reviewSetup.numWeeksPerResponse || parseInt(reviewSetup.numWeeksPerResponse) < 1) {
+      setFeedback({ type: "error", message: "Review response time must be at least 1 week." });
+      return;
+    }
+    if (!reviewSetup.numWeeksPerReview || parseInt(reviewSetup.numWeeksPerReview) < 1) {
+      setFeedback({ type: "error", message: "Review completion time must be at least 1 week." });
+      return;
+    }
+
     setFeedback({ type: null, message: "" });
-    
-    try {
-      // Validate
-      if (!reviewSetup.numWeeksPerResponse || parseInt(reviewSetup.numWeeksPerResponse) < 1) {
-        setFeedback({ type: "error", message: "Review response time must be at least 1 week." });
-        setSaving(false);
-        return;
-      }
-      if (!reviewSetup.numWeeksPerReview || parseInt(reviewSetup.numWeeksPerReview) < 1) {
-        setFeedback({ type: "error", message: "Review completion time must be at least 1 week." });
-        setSaving(false);
-        return;
-      }
 
-      // Save to localStorage (temporary - ready for database integration)
-      Object.keys(reviewSetup).forEach((key) => {
-        saveToStorage(`reviewSetup_${key}`, reviewSetup[key as keyof typeof reviewSetup]);
-      });
+    // Save to database
+    const success = await reviewSetupSettings.saveSettings({
+      review_defaultReviewMode: reviewSetup.defaultReviewMode,
+      review_restrictReviewerFileAccess: reviewSetup.restrictReviewerFileAccess,
+      review_reviewerAccessKeysEnabled: reviewSetup.reviewerAccessKeysEnabled,
+      review_numWeeksPerResponse: reviewSetup.numWeeksPerResponse,
+      review_numWeeksPerReview: reviewSetup.numWeeksPerReview,
+      review_numDaysBeforeInviteReminder: reviewSetup.numDaysBeforeInviteReminder,
+      review_numDaysBeforeSubmitReminder: reviewSetup.numDaysBeforeSubmitReminder,
+    });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+    if (success) {
       setFeedback({ type: "success", message: "Review setup settings saved successfully." });
-      
-      // Clear feedback after 3 seconds
       setTimeout(() => setFeedback({ type: null, message: "" }), 3000);
-    } catch (error) {
-      setFeedback({ type: "error", message: "Failed to save review setup settings." });
-    } finally {
-      setSaving(false);
+    } else {
+      setFeedback({
+        type: "error",
+        message: reviewSetupSettings.error || "Failed to save review setup settings.",
+      });
     }
   };
 
   const handleSaveReviewerGuidance = async () => {
-    setSaving(true);
     setFeedback({ type: null, message: "" });
-    
-    try {
-      // Save to localStorage
-      Object.keys(reviewerGuidance).forEach((key) => {
-        saveToStorage(`reviewerGuidance_${key}`, reviewerGuidance[key as keyof typeof reviewerGuidance]);
-      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    // Save to database
+    const success = await reviewerGuidanceSettings.saveSettings({
+      reviewerGuidance_reviewGuidelines: reviewerGuidance.reviewGuidelines,
+      reviewerGuidance_competingInterests: reviewerGuidance.competingInterests,
+      reviewerGuidance_showEnsuringLink: reviewerGuidance.showEnsuringLink,
+    });
 
+    if (success) {
       setFeedback({ type: "success", message: "Reviewer guidance settings saved successfully." });
       setTimeout(() => setFeedback({ type: null, message: "" }), 3000);
-    } catch (error) {
-      setFeedback({ type: "error", message: "Failed to save reviewer guidance settings." });
-    } finally {
-      setSaving(false);
+    } else {
+      setFeedback({
+        type: "error",
+        message: reviewerGuidanceSettings.error || "Failed to save reviewer guidance settings.",
+      });
     }
   };
 
   const handleSaveAuthorGuidelines = async () => {
-    setSaving(true);
     setFeedback({ type: null, message: "" });
-    
-    try {
-      saveToStorage("authorGuidelines", authorGuidelines);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    // Save to database
+    const success = await authorGuidelinesSettings.saveSettings({
+      authorGuidelines: authorGuidelines,
+    });
 
+    if (success) {
       setFeedback({ type: "success", message: "Author guidelines saved successfully." });
       setTimeout(() => setFeedback({ type: null, message: "" }), 3000);
-    } catch (error) {
-      setFeedback({ type: "error", message: "Failed to save author guidelines." });
-    } finally {
-      setSaving(false);
+    } else {
+      setFeedback({
+        type: "error",
+        message: authorGuidelinesSettings.error || "Failed to save author guidelines.",
+      });
     }
   };
 
   const handleSaveEmailSetup = async () => {
-    setSaving(true);
+    // Validate email if provided
+    if (emailSetup.envelopeSender && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailSetup.envelopeSender)) {
+      setFeedback({ type: "error", message: "Please enter a valid email address." });
+      return;
+    }
+
     setFeedback({ type: null, message: "" });
-    
-    try {
-      // Validate email if provided
-      if (emailSetup.envelopeSender && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailSetup.envelopeSender)) {
-        setFeedback({ type: "error", message: "Please enter a valid email address." });
-        setSaving(false);
-        return;
-      }
 
-      // Save to localStorage
-      Object.keys(emailSetup).forEach((key) => {
-        saveToStorage(`emailSetup_${key}`, emailSetup[key as keyof typeof emailSetup]);
-      });
+    // Save to database
+    const success = await emailSetupSettings.saveSettings({
+      emailSetup_emailSignature: emailSetup.emailSignature,
+      emailSetup_envelopeSender: emailSetup.envelopeSender,
+    });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+    if (success) {
       setFeedback({ type: "success", message: "Email setup settings saved successfully." });
       setTimeout(() => setFeedback({ type: null, message: "" }), 3000);
-    } catch (error) {
-      setFeedback({ type: "error", message: "Failed to save email setup settings." });
-    } finally {
-      setSaving(false);
+    } else {
+      setFeedback({
+        type: "error",
+        message: emailSetupSettings.error || "Failed to save email setup settings.",
+      });
     }
   };
 
@@ -668,9 +746,10 @@ export default function SettingsWorkflowPage() {
                         <PkpButton 
                           variant="primary" 
                           onClick={handleSaveAuthorGuidelines}
-                          disabled={saving}
+                          disabled={authorGuidelinesSettings.loading}
+                          loading={authorGuidelinesSettings.loading}
                         >
-                          {saving ? "Saving..." : "Save"}
+                          {authorGuidelinesSettings.loading ? "Saving..." : "Save"}
                         </PkpButton>
                       </div>
                     </div>
@@ -971,9 +1050,10 @@ export default function SettingsWorkflowPage() {
                       <PkpButton 
                         variant="primary" 
                         onClick={handleSaveReviewSetup}
-                        disabled={saving}
+                        disabled={reviewSetupSettings.loading}
+                        loading={reviewSetupSettings.loading}
                       >
-                        {saving ? "Saving..." : "Save"}
+                        {reviewSetupSettings.loading ? "Saving..." : "Save"}
                       </PkpButton>
                     </div>
                   </div>
@@ -1089,9 +1169,10 @@ export default function SettingsWorkflowPage() {
                       <PkpButton 
                         variant="primary" 
                         onClick={handleSaveReviewerGuidance}
-                        disabled={saving}
+                        disabled={reviewerGuidanceSettings.loading}
+                        loading={reviewerGuidanceSettings.loading}
                       >
-                        {saving ? "Saving..." : "Save"}
+                        {reviewerGuidanceSettings.loading ? "Saving..." : "Save"}
                       </PkpButton>
                     </div>
                   </div>
@@ -1393,9 +1474,10 @@ export default function SettingsWorkflowPage() {
                       <PkpButton 
                         variant="primary" 
                         onClick={handleSaveEmailSetup}
-                        disabled={saving}
+                        disabled={emailSetupSettings.loading}
+                        loading={emailSetupSettings.loading}
                       >
-                        {saving ? "Saving..." : "Save"}
+                        {emailSetupSettings.loading ? "Saving..." : "Save"}
                       </PkpButton>
                     </div>
                   </div>

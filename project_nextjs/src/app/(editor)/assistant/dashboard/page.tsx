@@ -2,8 +2,40 @@
 
 import Link from "next/link";
 import { FileText, Users, ClipboardList, Inbox } from "lucide-react";
+import { useAssistantTasks } from "@/features/assistant/hooks/useAssistantTasks";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
 
 export default function AssistantDashboardPage() {
+  const { user } = useAuth();
+  const { tasks, loading: tasksLoading } = useAssistantTasks();
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(true);
+
+  // Load submissions
+  useEffect(() => {
+    const loadSubmissions = async () => {
+      if (!user) {
+        setSubmissionsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/editor/assistant/submissions");
+        const data = await response.json();
+
+        if (response.ok && data.ok) {
+          setSubmissions(data.submissions || []);
+        }
+      } catch (error) {
+        console.error("Error loading submissions:", error);
+      } finally {
+        setSubmissionsLoading(false);
+      }
+    };
+
+    loadSubmissions();
+  }, [user]);
   return (
     <div style={{
       width: "100%",
@@ -89,7 +121,7 @@ export default function AssistantDashboardPage() {
               fontWeight: '600',
               color: '#002C40',
             }}>
-              --
+              {tasksLoading ? '...' : tasks.length}
             </div>
           </div>
 
@@ -119,7 +151,7 @@ export default function AssistantDashboardPage() {
               fontWeight: '600',
               color: '#002C40',
             }}>
-              --
+              {submissionsLoading ? '...' : submissions.length}
             </div>
           </div>
 

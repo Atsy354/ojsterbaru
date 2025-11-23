@@ -14,6 +14,7 @@ const PROTECTED_ROUTES = {
   '/admin': ['admin'], // Root admin page - only admin
   '/manager': ['manager', 'admin'],
   '/editor': ['editor', 'section_editor', 'admin'],
+  '/assistant': ['assistant', 'admin'],
   '/section-editor': ['section_editor', 'editor', 'admin'],
   '/reviewer': ['reviewer', 'admin'],
   '/author': ['author', 'admin'],

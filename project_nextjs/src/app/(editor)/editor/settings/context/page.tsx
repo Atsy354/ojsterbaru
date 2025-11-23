@@ -10,28 +10,25 @@ import { PkpTable, PkpTableHeader, PkpTableRow, PkpTableHead, PkpTableCell } fro
 import { PkpCheckbox } from "@/components/ui/pkp-checkbox";
 import { DUMMY_SECTIONS, DUMMY_CATEGORIES } from "@/features/editor/settings-dummy-data";
 import { USE_DUMMY } from "@/lib/dummy";
-
-// Helper functions for localStorage
-const loadFromStorage = (key: string) => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
-  } catch {
-    return null;
-  }
-};
-
-const saveToStorage = (key: string, value: any) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-  }
-};
+import { useJournalSettings, useMigrateLocalStorageToDatabase } from "@/features/editor/hooks/useJournalSettings";
 
 export default function SettingsContextPage() {
+  // Database integration
+  const contextSettings = useJournalSettings({
+    section: "context",
+    autoLoad: true,
+  });
+
+  // Migrate localStorage to database
+  const migrateContext = useMigrateLocalStorageToDatabase(
+    "context",
+    ["settings_context_masthead", "settings_context_contact"]
+  );
+
+  useEffect(() => {
+    migrateContext.migrate();
+  }, []);
+
   // Masthead form state
   const [masthead, setMasthead] = useState({
     journalTitle: '',
@@ -46,19 +43,35 @@ export default function SettingsContextPage() {
     mailingAddress: '',
   });
 
-  // Feedback and loading states
+  // Feedback states
   const [mastheadFeedback, setMastheadFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [contactFeedback, setContactFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingMasthead, setSavingMasthead] = useState(false);
-  const [savingContact, setSavingContact] = useState(false);
 
-  // Load saved data on mount
+  // Load saved data from database
   useEffect(() => {
-    const savedMasthead = loadFromStorage('settings_context_masthead');
-    const savedContact = loadFromStorage('settings_context_contact');
-    if (savedMasthead) setMasthead(savedMasthead);
-    if (savedContact) setContact(savedContact);
-  }, []);
+    if (contextSettings.settings && Object.keys(contextSettings.settings).length > 0) {
+      const settings = contextSettings.settings as any;
+      if (settings.masthead) {
+        try {
+          const mastheadData = typeof settings.masthead === 'string' ? JSON.parse(settings.masthead) : settings.masthead;
+          setMasthead({
+            journalTitle: mastheadData.journalTitle || '',
+            journalDescription: mastheadData.journalDescription || '',
+            masthead: mastheadData.masthead || '',
+          });
+        } catch {
+          // If parsing fails, use as is
+        }
+      }
+      if (settings.contact_contactEmail || settings.contact_contactName) {
+        setContact({
+          contactEmail: settings.contact_contactEmail || '',
+          contactName: settings.contact_contactName || '',
+          mailingAddress: settings.contact_mailingAddress || '',
+        });
+      }
+    }
+  }, [contextSettings.settings]);
 
   // Auto-dismiss feedback messages
   useEffect(() => {
@@ -85,16 +98,15 @@ export default function SettingsContextPage() {
       return;
     }
 
-    setSavingMasthead(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_context_masthead', masthead);
+    setMastheadFeedback(null);
+    const success = await contextSettings.saveSettings({
+      masthead: JSON.stringify(masthead),
+    });
+
+    if (success) {
       setMastheadFeedback({ type: 'success', message: 'Masthead settings saved successfully.' });
-    } catch (error) {
-      setMastheadFeedback({ type: 'error', message: 'Failed to save masthead settings.' });
-    } finally {
-      setSavingMasthead(false);
+    } else {
+      setMastheadFeedback({ type: 'error', message: contextSettings.error || 'Failed to save masthead settings.' });
     }
   };
 
@@ -113,16 +125,17 @@ export default function SettingsContextPage() {
       return;
     }
 
-    setSavingContact(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_context_contact', contact);
+    setContactFeedback(null);
+    const success = await contextSettings.saveSettings({
+      contact_contactEmail: contact.contactEmail,
+      contact_contactName: contact.contactName,
+      contact_mailingAddress: contact.mailingAddress,
+    });
+
+    if (success) {
       setContactFeedback({ type: 'success', message: 'Contact information saved successfully.' });
-    } catch (error) {
-      setContactFeedback({ type: 'error', message: 'Failed to save contact information.' });
-    } finally {
-      setSavingContact(false);
+    } else {
+      setContactFeedback({ type: 'error', message: contextSettings.error || 'Failed to save contact information.' });
     }
   };
   return (
@@ -276,8 +289,8 @@ export default function SettingsContextPage() {
                       onChange={(e) => setMasthead({ ...masthead, masthead: e.target.value })}
                     />
                   </div>
-                  <PkpButton variant="primary" type="submit" disabled={savingMasthead}>
-                    {savingMasthead ? 'Saving...' : 'Save'}
+                  <PkpButton variant="primary" type="submit" disabled={contextSettings.loading} loading={contextSettings.loading}>
+                    {contextSettings.loading ? 'Saving...' : 'Save'}
                   </PkpButton>
                 </div>
               </form>
@@ -369,8 +382,8 @@ export default function SettingsContextPage() {
                       onChange={(e) => setContact({ ...contact, mailingAddress: e.target.value })}
                     />
                   </div>
-                  <PkpButton variant="primary" type="submit" disabled={savingContact}>
-                    {savingContact ? 'Saving...' : 'Save'}
+                  <PkpButton variant="primary" type="submit" disabled={contextSettings.loading} loading={contextSettings.loading}>
+                    {contextSettings.loading ? 'Saving...' : 'Save'}
                   </PkpButton>
                 </div>
               </form>

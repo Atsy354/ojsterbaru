@@ -8,29 +8,26 @@ import { PkpTextarea } from "@/components/ui/pkp-textarea";
 import { PkpRadio } from "@/components/ui/pkp-radio";
 import { PkpSelect } from "@/components/ui/pkp-select";
 import { PkpCheckbox } from "@/components/ui/pkp-checkbox";
-
-// Helper functions for localStorage
-const loadFromStorage = (key: string) => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
-  } catch {
-    return null;
-  }
-};
-
-const saveToStorage = (key: string, value: any) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-  }
-};
+import { useJournalSettings, useMigrateLocalStorageToDatabase } from "@/features/editor/hooks/useJournalSettings";
 
 export default function SettingsDistributionPage() {
   const [activeTab, setActiveTab] = useState("license");
+
+  // Database integration
+  const distributionSettings = useJournalSettings({
+    section: "distribution",
+    autoLoad: true,
+  });
+
+  // Migrate localStorage to database
+  const migrateDistribution = useMigrateLocalStorageToDatabase(
+    "distribution",
+    ["settings_distribution_license", "settings_distribution_indexing", "settings_distribution_payments"]
+  );
+
+  useEffect(() => {
+    migrateDistribution.migrate();
+  }, []);
 
   // License state
   const [distributionLicense, setDistributionLicense] = useState({
@@ -42,7 +39,6 @@ export default function SettingsDistributionPage() {
     licenseTerms: '',
   });
   const [licenseFeedback, setLicenseFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingLicense, setSavingLicense] = useState(false);
 
   // Indexing state
   const [distributionIndexing, setDistributionIndexing] = useState({
@@ -57,7 +53,6 @@ export default function SettingsDistributionPage() {
     customIndexingServices: '',
   });
   const [indexingFeedback, setIndexingFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingIndexing, setSavingIndexing] = useState(false);
 
   // Payments state
   const [distributionPayments, setDistributionPayments] = useState({
@@ -68,18 +63,37 @@ export default function SettingsDistributionPage() {
     paymentInstructions: '',
   });
   const [paymentsFeedback, setPaymentsFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingPayments, setSavingPayments] = useState(false);
 
-  // Load saved data on mount
+  // Load saved data from database
   useEffect(() => {
-    const savedLicense = loadFromStorage('settings_distribution_license');
-    const savedIndexing = loadFromStorage('settings_distribution_indexing');
-    const savedPayments = loadFromStorage('settings_distribution_payments');
-    
-    if (savedLicense) setDistributionLicense(savedLicense);
-    if (savedIndexing) setDistributionIndexing(savedIndexing);
-    if (savedPayments) setDistributionPayments(savedPayments);
-  }, []);
+    if (distributionSettings.settings && Object.keys(distributionSettings.settings).length > 0) {
+      const settings = distributionSettings.settings as any;
+      if (settings.license) {
+        try {
+          const licenseData = typeof settings.license === 'string' ? JSON.parse(settings.license) : settings.license;
+          setDistributionLicense(licenseData);
+        } catch {
+          // If parsing fails, use defaults
+        }
+      }
+      if (settings.indexing) {
+        try {
+          const indexingData = typeof settings.indexing === 'string' ? JSON.parse(settings.indexing) : settings.indexing;
+          setDistributionIndexing(indexingData);
+        } catch {
+          // If parsing fails, use defaults
+        }
+      }
+      if (settings.payments) {
+        try {
+          const paymentsData = typeof settings.payments === 'string' ? JSON.parse(settings.payments) : settings.payments;
+          setDistributionPayments(paymentsData);
+        } catch {
+          // If parsing fails, use defaults
+        }
+      }
+    }
+  }, [distributionSettings.settings]);
 
   // Auto-dismiss feedback messages
   useEffect(() => {
@@ -136,29 +150,29 @@ export default function SettingsDistributionPage() {
       }
     }
 
-    setSavingLicense(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_distribution_license', distributionLicense);
+    setLicenseFeedback(null);
+    const success = await distributionSettings.saveSettings({
+      license: JSON.stringify(distributionLicense),
+    });
+
+    if (success) {
       setLicenseFeedback({ type: 'success', message: 'License settings saved successfully.' });
-    } catch (error) {
-      setLicenseFeedback({ type: 'error', message: 'Failed to save license settings.' });
-    } finally {
-      setSavingLicense(false);
+    } else {
+      setLicenseFeedback({ type: 'error', message: distributionSettings.error || 'Failed to save license settings.' });
     }
   };
 
   const handleSaveIndexing = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingIndexing(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_distribution_indexing', distributionIndexing);
+    setIndexingFeedback(null);
+    const success = await distributionSettings.saveSettings({
+      indexing: JSON.stringify(distributionIndexing),
+    });
+
+    if (success) {
       setIndexingFeedback({ type: 'success', message: 'Search indexing settings saved successfully.' });
-    } catch (error) {
-      setIndexingFeedback({ type: 'error', message: 'Failed to save search indexing settings.' });
-    } finally {
-      setSavingIndexing(false);
+    } else {
+      setIndexingFeedback({ type: 'error', message: distributionSettings.error || 'Failed to save search indexing settings.' });
     }
   };
 
@@ -186,15 +200,15 @@ export default function SettingsDistributionPage() {
       }
     }
 
-    setSavingPayments(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_distribution_payments', distributionPayments);
+    setPaymentsFeedback(null);
+    const success = await distributionSettings.saveSettings({
+      payments: JSON.stringify(distributionPayments),
+    });
+
+    if (success) {
       setPaymentsFeedback({ type: 'success', message: 'Payment settings saved successfully.' });
-    } catch (error) {
-      setPaymentsFeedback({ type: 'error', message: 'Failed to save payment settings.' });
-    } finally {
-      setSavingPayments(false);
+    } else {
+      setPaymentsFeedback({ type: 'error', message: distributionSettings.error || 'Failed to save payment settings.' });
     }
   };
 
@@ -555,8 +569,8 @@ export default function SettingsDistributionPage() {
                 </p>
               </div>
 
-              <PkpButton variant="primary" type="submit" disabled={savingLicense}>
-                {savingLicense ? 'Saving...' : 'Save'}
+              <PkpButton variant="primary" type="submit" disabled={distributionSettings.loading} loading={distributionSettings.loading}>
+                {distributionSettings.loading ? 'Saving...' : 'Save'}
               </PkpButton>
             </div>
             </form>
@@ -820,8 +834,8 @@ export default function SettingsDistributionPage() {
                 </p>
               </div>
 
-              <PkpButton variant="primary" type="submit" disabled={savingIndexing}>
-                {savingIndexing ? 'Saving...' : 'Save'}
+              <PkpButton variant="primary" type="submit" disabled={distributionSettings.loading} loading={distributionSettings.loading}>
+                {distributionSettings.loading ? 'Saving...' : 'Save'}
               </PkpButton>
             </div>
             </form>
@@ -1021,8 +1035,8 @@ export default function SettingsDistributionPage() {
                 </p>
               </div>
 
-              <PkpButton variant="primary" type="submit" disabled={savingPayments}>
-                {savingPayments ? 'Saving...' : 'Save'}
+              <PkpButton variant="primary" type="submit" disabled={distributionSettings.loading} loading={distributionSettings.loading}>
+                {distributionSettings.loading ? 'Saving...' : 'Save'}
               </PkpButton>
             </div>
             </form>

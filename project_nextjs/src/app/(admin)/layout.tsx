@@ -237,9 +237,11 @@ export default function AdminLayout({
         <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block bg-[#002C40]`} style={{
           backgroundColor: '#002C40',
           minHeight: 'calc(100vh - 64px)',
-          width: '16rem'
+          width: '16rem',
+          display: 'flex',
+          flexDirection: 'column',
         }}>
-          <div className="p-6" style={{padding: '1.5rem 1.25rem'}}>
+          <div style={{padding: '1.5rem 1.25rem', flexShrink: 0}}>
             {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -286,14 +288,65 @@ export default function AdminLayout({
                 JOURNAL OPERATION SYSTEM
               </div>
             </div>
-            
+          </div>
+          
+          {/* Navigation - Scrollable Area */}
+          <div 
+            className="sidebar-scrollable"
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              minHeight: 0,
+              padding: '0 1.5rem 1.5rem 1.5rem',
+            }}
+          >
             {/* Administration Heading - Reduced */}
-            <div className="mt-6">
+            <div className="mt-6 mb-4">
               <h2 className="text-white font-bold" style={{
                 fontSize: '1.25rem',
                 fontWeight: 'bold'
               }}>{t('admin.administration')}</h2>
             </div>
+            
+            <nav className="space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      item.current
+                        ? 'bg-white bg-opacity-15 text-white'
+                        : 'text-gray-300 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+              
+              {/* Site Settings Submenu */}
+              {pathname.startsWith("/admin/site-settings") && (
+                <div className="ml-8 mt-2 space-y-1">
+                  {siteSettingsSubmenu.map((subItem) => (
+                    <Link
+                      key={subItem.name}
+                      href={subItem.href}
+                      className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                        pathname === subItem.href
+                          ? 'bg-white bg-opacity-15 text-white'
+                          : 'text-gray-300 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                      }`}
+                    >
+                      {subItem.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </nav>
           </div>
         </aside>
 

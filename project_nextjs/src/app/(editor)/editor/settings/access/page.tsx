@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PkpTabs, PkpTabsList, PkpTabsTrigger, PkpTabsContent } from "@/components/ui/pkp-tabs";
 import { PkpButton } from "@/components/ui/pkp-button";
 import { PkpCheckbox } from "@/components/ui/pkp-checkbox";
@@ -8,73 +8,94 @@ import { PkpInput } from "@/components/ui/pkp-input";
 import { PkpTable, PkpTableHeader, PkpTableRow, PkpTableHead, PkpTableCell } from "@/components/ui/pkp-table";
 import { DUMMY_USERS, DUMMY_ROLES } from "@/features/editor/settings-dummy-data";
 import { USE_DUMMY } from "@/lib/dummy";
-
-// Helper functions for localStorage
-const loadFromStorage = (key: string, defaultValue: any) => {
-  if (typeof window === "undefined") return defaultValue;
-  try {
-    const item = localStorage.getItem(`ojs_settings_${key}`);
-    return item ? JSON.parse(item) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-};
-
-const saveToStorage = (key: string, value: any) => {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(`ojs_settings_${key}`, JSON.stringify(value));
-  } catch (error) {
-    console.error("Failed to save to localStorage:", error);
-  }
-};
+import { useJournalSettings, useMigrateLocalStorageToDatabase } from "@/features/editor/hooks/useJournalSettings";
 
 export default function SettingsAccessPage() {
+  // Database integration
+  const accessSettings = useJournalSettings({
+    section: "access",
+    autoLoad: true,
+  });
+
+  // Migrate localStorage to database
+  const migrateAccess = useMigrateLocalStorageToDatabase(
+    "access",
+    [
+      "siteAccess_allowRegistrations",
+      "siteAccess_requireReviewerInterests",
+      "siteAccess_allowRememberMe",
+      "siteAccess_sessionLifetime",
+      "siteAccess_forceSSL",
+    ]
+  );
+
+  useEffect(() => {
+    migrateAccess.migrate();
+  }, []);
+
   // Form states - Site Access
   const [siteAccess, setSiteAccess] = useState({
-    allowRegistrations: loadFromStorage("siteAccess_allowRegistrations", false),
-    requireReviewerInterests: loadFromStorage("siteAccess_requireReviewerInterests", false),
-    allowRememberMe: loadFromStorage("siteAccess_allowRememberMe", true),
-    sessionLifetime: loadFromStorage("siteAccess_sessionLifetime", "3600"),
-    forceSSL: loadFromStorage("siteAccess_forceSSL", false),
+    allowRegistrations: false,
+    requireReviewerInterests: false,
+    allowRememberMe: true,
+    sessionLifetime: "3600",
+    forceSSL: false,
   });
+
+  // Load from database
+  useEffect(() => {
+    if (accessSettings.settings && Object.keys(accessSettings.settings).length > 0) {
+      const settings = accessSettings.settings as any;
+      setSiteAccess({
+        allowRegistrations: settings.siteAccess_allowRegistrations ?? siteAccess.allowRegistrations,
+        requireReviewerInterests: settings.siteAccess_requireReviewerInterests ?? siteAccess.requireReviewerInterests,
+        allowRememberMe: settings.siteAccess_allowRememberMe ?? siteAccess.allowRememberMe,
+        sessionLifetime: settings.siteAccess_sessionLifetime ?? siteAccess.sessionLifetime,
+        forceSSL: settings.siteAccess_forceSSL ?? siteAccess.forceSSL,
+      });
+    }
+  }, [accessSettings.settings]);
 
   // Feedback states
   const [feedback, setFeedback] = useState<{
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
-  const [saving, setSaving] = useState(false);
+
+  // Auto-dismiss feedback
+  useEffect(() => {
+    if (feedback.type) {
+      const timer = setTimeout(() => setFeedback({ type: null, message: "" }), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
 
   // Save handler
   const handleSaveSiteAccess = async () => {
-    setSaving(true);
+    // Validate session lifetime
+    if (siteAccess.sessionLifetime && parseInt(siteAccess.sessionLifetime) < 60) {
+      setFeedback({ type: "error", message: "Session lifetime must be at least 60 seconds." });
+      return;
+    }
+
     setFeedback({ type: null, message: "" });
-    
-    try {
-      // Validate session lifetime
-      if (siteAccess.sessionLifetime && parseInt(siteAccess.sessionLifetime) < 60) {
-        setFeedback({ type: "error", message: "Session lifetime must be at least 60 seconds." });
-        setSaving(false);
-        return;
-      }
 
-      // Save to localStorage (temporary - ready for database integration)
-      Object.keys(siteAccess).forEach((key) => {
-        saveToStorage(`siteAccess_${key}`, siteAccess[key as keyof typeof siteAccess]);
-      });
+    // Save to database
+    const success = await accessSettings.saveSettings({
+      siteAccess_allowRegistrations: siteAccess.allowRegistrations,
+      siteAccess_requireReviewerInterests: siteAccess.requireReviewerInterests,
+      siteAccess_allowRememberMe: siteAccess.allowRememberMe,
+      siteAccess_sessionLifetime: siteAccess.sessionLifetime,
+      siteAccess_forceSSL: siteAccess.forceSSL,
+    });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+    if (success) {
       setFeedback({ type: "success", message: "Site access settings saved successfully." });
-      
-      // Clear feedback after 3 seconds
-      setTimeout(() => setFeedback({ type: null, message: "" }), 3000);
-    } catch (error) {
-      setFeedback({ type: "error", message: "Failed to save site access settings." });
-    } finally {
-      setSaving(false);
+    } else {
+      setFeedback({
+        type: "error",
+        message: accessSettings.error || "Failed to save site access settings.",
+      });
     }
   };
   return (
@@ -445,9 +466,10 @@ export default function SettingsAccessPage() {
                 <PkpButton 
                   variant="primary" 
                   onClick={handleSaveSiteAccess}
-                  disabled={saving}
+                  disabled={accessSettings.loading}
+                  loading={accessSettings.loading}
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {accessSettings.loading ? "Saving..." : "Save"}
                 </PkpButton>
               </div>
             </div>

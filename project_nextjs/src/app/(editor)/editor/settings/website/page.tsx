@@ -10,26 +10,7 @@ import { PkpSelect } from "@/components/ui/pkp-select";
 import { PkpTable, PkpTableHeader, PkpTableRow, PkpTableHead, PkpTableCell } from "@/components/ui/pkp-table";
 import { DUMMY_NAVIGATION_MENUS, DUMMY_NAVIGATION_MENU_ITEMS, DUMMY_PLUGINS } from "@/features/editor/settings-dummy-data";
 import { USE_DUMMY } from "@/lib/dummy";
-
-// Helper functions for localStorage
-const loadFromStorage = (key: string) => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
-  } catch {
-    return null;
-  }
-};
-
-const saveToStorage = (key: string, value: any) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-  }
-};
+import { useJournalSettings, useMigrateLocalStorageToDatabase } from "@/features/editor/hooks/useJournalSettings";
 
 export default function WebsiteSettingsPage() {
   const [activeTab, setActiveTab] = useState("appearance");
@@ -37,20 +18,44 @@ export default function WebsiteSettingsPage() {
   const [activeSetupSubTab, setActiveSetupSubTab] = useState("information");
   const [activePluginsSubTab, setActivePluginsSubTab] = useState("installedPlugins");
 
+  // Database integration
+  const websiteSettings = useJournalSettings({
+    section: "website",
+    autoLoad: true,
+  });
+
+  // Migrate localStorage to database
+  const migrateWebsite = useMigrateLocalStorageToDatabase(
+    "website",
+    [
+      "settings_website_appearance_theme",
+      "settings_website_appearance_setup",
+      "settings_website_appearance_advanced",
+      "settings_website_setup_information",
+      "settings_website_setup_languages",
+      "settings_website_setup_announcements",
+      "settings_website_setup_lists",
+      "settings_website_setup_privacy",
+      "settings_website_setup_datetime",
+      "settings_website_setup_archiving",
+    ]
+  );
+
+  useEffect(() => {
+    migrateWebsite.migrate();
+  }, []);
+
   // Appearance - Theme state
   const [appearanceTheme, setAppearanceTheme] = useState({ activeTheme: 'default' });
   const [appearanceThemeFeedback, setAppearanceThemeFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingAppearanceTheme, setSavingAppearanceTheme] = useState(false);
 
   // Appearance - Setup state
   const [appearanceSetup, setAppearanceSetup] = useState({ pageFooter: '' });
   const [appearanceSetupFeedback, setAppearanceSetupFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingAppearanceSetup, setSavingAppearanceSetup] = useState(false);
 
   // Appearance - Advanced state
   const [appearanceAdvanced, setAppearanceAdvanced] = useState({ customCss: '' });
   const [appearanceAdvancedFeedback, setAppearanceAdvancedFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingAppearanceAdvanced, setSavingAppearanceAdvanced] = useState(false);
 
   // Setup - Information state
   const [setupInformation, setSetupInformation] = useState({ 
@@ -59,32 +64,26 @@ export default function WebsiteSettingsPage() {
     aboutJournal: '' 
   });
   const [setupInformationFeedback, setSetupInformationFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupInformation, setSavingSetupInformation] = useState(false);
 
   // Setup - Languages state
   const [setupLanguages, setSetupLanguages] = useState({ primaryLocale: 'en', supportedLocales: ['en'] });
   const [setupLanguagesFeedback, setSetupLanguagesFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupLanguages, setSavingSetupLanguages] = useState(false);
 
   // Setup - Announcements state
   const [setupAnnouncements, setSetupAnnouncements] = useState({ enableAnnouncements: false });
   const [setupAnnouncementsFeedback, setSetupAnnouncementsFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupAnnouncements, setSavingSetupAnnouncements] = useState(false);
 
   // Setup - Lists state
   const [setupLists, setSetupLists] = useState({ itemsPerPage: 25 });
   const [setupListsFeedback, setSetupListsFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupLists, setSavingSetupLists] = useState(false);
 
   // Setup - Privacy state
   const [setupPrivacy, setSetupPrivacy] = useState({ privacyStatement: '' });
   const [setupPrivacyFeedback, setSetupPrivacyFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupPrivacy, setSavingSetupPrivacy] = useState(false);
 
   // Setup - Date/Time state
   const [setupDateTime, setSetupDateTime] = useState({ timeZone: 'UTC', dateFormat: 'Y-m-d' });
   const [setupDateTimeFeedback, setSetupDateTimeFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupDateTime, setSavingSetupDateTime] = useState(false);
 
   // Setup - Archiving state
   const [setupArchiving, setSetupArchiving] = useState({ 
@@ -94,32 +93,76 @@ export default function WebsiteSettingsPage() {
     clockssUrl: '' 
   });
   const [setupArchivingFeedback, setSetupArchivingFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [savingSetupArchiving, setSavingSetupArchiving] = useState(false);
 
-  // Load saved data on mount
+  // Load saved data from database
   useEffect(() => {
-    const savedTheme = loadFromStorage('settings_website_appearance_theme');
-    const savedSetup = loadFromStorage('settings_website_appearance_setup');
-    const savedAdvanced = loadFromStorage('settings_website_appearance_advanced');
-    const savedInformation = loadFromStorage('settings_website_setup_information');
-    const savedLanguages = loadFromStorage('settings_website_setup_languages');
-    const savedAnnouncements = loadFromStorage('settings_website_setup_announcements');
-    const savedLists = loadFromStorage('settings_website_setup_lists');
-    const savedPrivacy = loadFromStorage('settings_website_setup_privacy');
-    const savedDateTime = loadFromStorage('settings_website_setup_datetime');
-    const savedArchiving = loadFromStorage('settings_website_setup_archiving');
-    
-    if (savedTheme) setAppearanceTheme(savedTheme);
-    if (savedSetup) setAppearanceSetup(savedSetup);
-    if (savedAdvanced) setAppearanceAdvanced(savedAdvanced);
-    if (savedInformation) setSetupInformation(savedInformation);
-    if (savedLanguages) setSetupLanguages(savedLanguages);
-    if (savedAnnouncements) setSetupAnnouncements(savedAnnouncements);
-    if (savedLists) setSetupLists(savedLists);
-    if (savedPrivacy) setSetupPrivacy(savedPrivacy);
-    if (savedDateTime) setSetupDateTime(savedDateTime);
-    if (savedArchiving) setSetupArchiving(savedArchiving);
-  }, []);
+    if (websiteSettings.settings && Object.keys(websiteSettings.settings).length > 0) {
+      const settings = websiteSettings.settings as any;
+      
+      if (settings.appearance_theme) {
+        try {
+          const themeData = typeof settings.appearance_theme === 'string' ? JSON.parse(settings.appearance_theme) : settings.appearance_theme;
+          setAppearanceTheme(themeData);
+        } catch {
+          // If parsing fails, use defaults
+        }
+      }
+      if (settings.appearance_setup) {
+        try {
+          const setupData = typeof settings.appearance_setup === 'string' ? JSON.parse(settings.appearance_setup) : settings.appearance_setup;
+          setAppearanceSetup(setupData);
+        } catch {}
+      }
+      if (settings.appearance_advanced) {
+        try {
+          const advancedData = typeof settings.appearance_advanced === 'string' ? JSON.parse(settings.appearance_advanced) : settings.appearance_advanced;
+          setAppearanceAdvanced(advancedData);
+        } catch {}
+      }
+      if (settings.setup_information) {
+        try {
+          const infoData = typeof settings.setup_information === 'string' ? JSON.parse(settings.setup_information) : settings.setup_information;
+          setSetupInformation(infoData);
+        } catch {}
+      }
+      if (settings.setup_languages) {
+        try {
+          const langData = typeof settings.setup_languages === 'string' ? JSON.parse(settings.setup_languages) : settings.setup_languages;
+          setSetupLanguages(langData);
+        } catch {}
+      }
+      if (settings.setup_announcements) {
+        try {
+          const annData = typeof settings.setup_announcements === 'string' ? JSON.parse(settings.setup_announcements) : settings.setup_announcements;
+          setSetupAnnouncements(annData);
+        } catch {}
+      }
+      if (settings.setup_lists) {
+        try {
+          const listsData = typeof settings.setup_lists === 'string' ? JSON.parse(settings.setup_lists) : settings.setup_lists;
+          setSetupLists(listsData);
+        } catch {}
+      }
+      if (settings.setup_privacy) {
+        try {
+          const privacyData = typeof settings.setup_privacy === 'string' ? JSON.parse(settings.setup_privacy) : settings.setup_privacy;
+          setSetupPrivacy(privacyData);
+        } catch {}
+      }
+      if (settings.setup_datetime) {
+        try {
+          const dtData = typeof settings.setup_datetime === 'string' ? JSON.parse(settings.setup_datetime) : settings.setup_datetime;
+          setSetupDateTime(dtData);
+        } catch {}
+      }
+      if (settings.setup_archiving) {
+        try {
+          const archData = typeof settings.setup_archiving === 'string' ? JSON.parse(settings.setup_archiving) : settings.setup_archiving;
+          setSetupArchiving(archData);
+        } catch {}
+      }
+    }
+  }, [websiteSettings.settings]);
 
   // Auto-dismiss feedback messages
   useEffect(() => {
@@ -195,43 +238,40 @@ export default function WebsiteSettingsPage() {
   // Save handlers
   const handleSaveAppearanceTheme = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingAppearanceTheme(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_appearance_theme', appearanceTheme);
+    setAppearanceThemeFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      appearance_theme: JSON.stringify(appearanceTheme),
+    });
+    if (success) {
       setAppearanceThemeFeedback({ type: 'success', message: 'Theme settings saved successfully.' });
-    } catch (error) {
-      setAppearanceThemeFeedback({ type: 'error', message: 'Failed to save theme settings.' });
-    } finally {
-      setSavingAppearanceTheme(false);
+    } else {
+      setAppearanceThemeFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save theme settings.' });
     }
   };
 
   const handleSaveAppearanceSetup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingAppearanceSetup(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_appearance_setup', appearanceSetup);
+    setAppearanceSetupFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      appearance_setup: JSON.stringify(appearanceSetup),
+    });
+    if (success) {
       setAppearanceSetupFeedback({ type: 'success', message: 'Appearance setup saved successfully.' });
-    } catch (error) {
-      setAppearanceSetupFeedback({ type: 'error', message: 'Failed to save appearance setup.' });
-    } finally {
-      setSavingAppearanceSetup(false);
+    } else {
+      setAppearanceSetupFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save appearance setup.' });
     }
   };
 
   const handleSaveAppearanceAdvanced = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingAppearanceAdvanced(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_appearance_advanced', appearanceAdvanced);
+    setAppearanceAdvancedFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      appearance_advanced: JSON.stringify(appearanceAdvanced),
+    });
+    if (success) {
       setAppearanceAdvancedFeedback({ type: 'success', message: 'Advanced appearance settings saved successfully.' });
-    } catch (error) {
-      setAppearanceAdvancedFeedback({ type: 'error', message: 'Failed to save advanced appearance settings.' });
-    } finally {
-      setSavingAppearanceAdvanced(false);
+    } else {
+      setAppearanceAdvancedFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save advanced appearance settings.' });
     }
   };
 
@@ -244,15 +284,14 @@ export default function WebsiteSettingsPage() {
       return;
     }
 
-    setSavingSetupInformation(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_information', setupInformation);
+    setSetupInformationFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_information: JSON.stringify(setupInformation),
+    });
+    if (success) {
       setSetupInformationFeedback({ type: 'success', message: 'Information settings saved successfully.' });
-    } catch (error) {
-      setSetupInformationFeedback({ type: 'error', message: 'Failed to save information settings.' });
-    } finally {
-      setSavingSetupInformation(false);
+    } else {
+      setSetupInformationFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save information settings.' });
     }
   };
 
@@ -262,29 +301,27 @@ export default function WebsiteSettingsPage() {
       setSetupLanguagesFeedback({ type: 'error', message: 'Primary locale is required.' });
       return;
     }
-    setSavingSetupLanguages(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_languages', setupLanguages);
+    setSetupLanguagesFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_languages: JSON.stringify(setupLanguages),
+    });
+    if (success) {
       setSetupLanguagesFeedback({ type: 'success', message: 'Language settings saved successfully.' });
-    } catch (error) {
-      setSetupLanguagesFeedback({ type: 'error', message: 'Failed to save language settings.' });
-    } finally {
-      setSavingSetupLanguages(false);
+    } else {
+      setSetupLanguagesFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save language settings.' });
     }
   };
 
   const handleSaveSetupAnnouncements = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingSetupAnnouncements(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_announcements', setupAnnouncements);
+    setSetupAnnouncementsFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_announcements: JSON.stringify(setupAnnouncements),
+    });
+    if (success) {
       setSetupAnnouncementsFeedback({ type: 'success', message: 'Announcements settings saved successfully.' });
-    } catch (error) {
-      setSetupAnnouncementsFeedback({ type: 'error', message: 'Failed to save announcements settings.' });
-    } finally {
-      setSavingSetupAnnouncements(false);
+    } else {
+      setSetupAnnouncementsFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save announcements settings.' });
     }
   };
 
@@ -294,43 +331,40 @@ export default function WebsiteSettingsPage() {
       setSetupListsFeedback({ type: 'error', message: 'Items per page must be at least 1.' });
       return;
     }
-    setSavingSetupLists(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_lists', setupLists);
+    setSetupListsFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_lists: JSON.stringify(setupLists),
+    });
+    if (success) {
       setSetupListsFeedback({ type: 'success', message: 'Lists settings saved successfully.' });
-    } catch (error) {
-      setSetupListsFeedback({ type: 'error', message: 'Failed to save lists settings.' });
-    } finally {
-      setSavingSetupLists(false);
+    } else {
+      setSetupListsFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save lists settings.' });
     }
   };
 
   const handleSaveSetupPrivacy = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingSetupPrivacy(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_privacy', setupPrivacy);
+    setSetupPrivacyFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_privacy: JSON.stringify(setupPrivacy),
+    });
+    if (success) {
       setSetupPrivacyFeedback({ type: 'success', message: 'Privacy statement saved successfully.' });
-    } catch (error) {
-      setSetupPrivacyFeedback({ type: 'error', message: 'Failed to save privacy statement.' });
-    } finally {
-      setSavingSetupPrivacy(false);
+    } else {
+      setSetupPrivacyFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save privacy statement.' });
     }
   };
 
   const handleSaveSetupDateTime = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingSetupDateTime(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_datetime', setupDateTime);
+    setSetupDateTimeFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_datetime: JSON.stringify(setupDateTime),
+    });
+    if (success) {
       setSetupDateTimeFeedback({ type: 'success', message: 'Date/Time settings saved successfully.' });
-    } catch (error) {
-      setSetupDateTimeFeedback({ type: 'error', message: 'Failed to save date/time settings.' });
-    } finally {
-      setSavingSetupDateTime(false);
+    } else {
+      setSetupDateTimeFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save date/time settings.' });
     }
   };
 
@@ -364,15 +398,14 @@ export default function WebsiteSettingsPage() {
       }
     }
 
-    setSavingSetupArchiving(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      saveToStorage('settings_website_setup_archiving', setupArchiving);
+    setSetupArchivingFeedback(null);
+    const success = await websiteSettings.saveSettings({
+      setup_archiving: JSON.stringify(setupArchiving),
+    });
+    if (success) {
       setSetupArchivingFeedback({ type: 'success', message: 'Archiving settings saved successfully.' });
-    } catch (error) {
-      setSetupArchivingFeedback({ type: 'error', message: 'Failed to save archiving settings.' });
-    } finally {
-      setSavingSetupArchiving(false);
+    } else {
+      setSetupArchivingFeedback({ type: 'error', message: websiteSettings.error || 'Failed to save archiving settings.' });
     }
   };
 
@@ -570,8 +603,8 @@ export default function WebsiteSettingsPage() {
                             <option value="custom">Custom Theme</option>
                           </PkpSelect>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingAppearanceTheme}>
-                          {savingAppearanceTheme ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -645,8 +678,8 @@ export default function WebsiteSettingsPage() {
                             onChange={(e) => setAppearanceSetup({ ...appearanceSetup, pageFooter: e.target.value })}
                           />
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingAppearanceSetup}>
-                          {savingAppearanceSetup ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -748,8 +781,8 @@ export default function WebsiteSettingsPage() {
                             Upload a favicon to display in browser tabs and bookmarks.
                           </p>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingAppearanceAdvanced}>
-                          {savingAppearanceAdvanced ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1019,8 +1052,8 @@ export default function WebsiteSettingsPage() {
                             onChange={(e) => setSetupInformation({ ...setupInformation, aboutJournal: e.target.value })}
                           />
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupInformation}>
-                          {savingSetupInformation ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1133,8 +1166,8 @@ export default function WebsiteSettingsPage() {
                             </div>
                           </div>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupLanguages}>
-                          {savingSetupLanguages ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1320,8 +1353,8 @@ export default function WebsiteSettingsPage() {
                             When enabled, announcements can be displayed on the journal website.
                           </p>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupAnnouncements}>
-                          {savingSetupAnnouncements ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1383,8 +1416,8 @@ export default function WebsiteSettingsPage() {
                             Set the default number of items to display per page in lists.
                           </p>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupLists}>
-                          {savingSetupLists ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1446,8 +1479,8 @@ export default function WebsiteSettingsPage() {
                             This statement will be displayed on the journal website.
                           </p>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupPrivacy}>
-                          {savingSetupPrivacy ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1524,8 +1557,8 @@ export default function WebsiteSettingsPage() {
                             <option value="m/d/Y">MM/DD/YYYY</option>
                           </PkpSelect>
                         </div>
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupDateTime}>
-                          {savingSetupDateTime ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>
@@ -1673,8 +1706,8 @@ export default function WebsiteSettingsPage() {
                           </div>
                         </div>
 
-                        <PkpButton variant="primary" type="submit" disabled={savingSetupArchiving}>
-                          {savingSetupArchiving ? 'Saving...' : 'Save'}
+                        <PkpButton variant="primary" type="submit" disabled={websiteSettings.loading} loading={websiteSettings.loading}>
+                          {websiteSettings.loading ? 'Saving...' : 'Save'}
                         </PkpButton>
                       </div>
                     </form>

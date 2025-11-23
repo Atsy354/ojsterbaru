@@ -218,7 +218,7 @@ export default function EditorLayout({ children }: Props) {
       >
         {/* Fixed Left Sidebar */}
         <aside 
-          className="pkp_structure_sidebar left hide-scrollbar" 
+          className="pkp_structure_sidebar left" 
           style={{
             width: '280px',
             backgroundColor: '#002C40',
@@ -227,16 +227,15 @@ export default function EditorLayout({ children }: Props) {
             left: 0,
             top: '57px',
             bottom: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
             zIndex: 90,
-            scrollbarWidth: 'none', /* Firefox */
-            msOverflowStyle: 'none', /* IE and Edge */
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {/* Sidebar Header with Logo */}
+          {/* Sidebar Header with Logo - Fixed Position */}
           <div style={{
             padding: '1.5rem 1.25rem',
+            flexShrink: 0, // Prevent logo from shrinking
           }}>
             {/* iamJOS Logo - Matching Admin Style */}
             <div style={{ marginBottom: '1rem' }}>
@@ -278,8 +277,19 @@ export default function EditorLayout({ children }: Props) {
             </div>
           </div>
           
-          {/* Navigation */}
-          <EditorSideNav />
+          {/* Navigation - Scrollable Area */}
+          <div 
+            className="sidebar-scrollable"
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              minHeight: 0, // Important for flex scrolling
+              height: 0, // Force flex to calculate height correctly
+            }}
+          >
+            <EditorSideNav />
+          </div>
         </aside>
         
         {/* Main Content Area - OJS 3.3 Exact Layout with Safe Area */}

@@ -238,10 +238,8 @@ export function EditorSideNav() {
   };
 
   return (
-    <nav className="pkp_nav hide-scrollbar" style={{
+    <nav className="pkp_nav" style={{
       padding: '0.5rem 0', // Safe padding top dan bottom
-      overflowY: 'auto',
-      height: 'calc(100vh - 220px)', // Adjusted untuk logo header
       width: '100%',
     }}>
       <ul
