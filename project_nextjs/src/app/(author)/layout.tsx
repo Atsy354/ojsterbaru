@@ -38,6 +38,11 @@ export default function AuthorLayout({
   const supabase = useSupabase();
   const [journals, setJournals] = useState<{ id: string; title: string; path: string }[]>([]);
 
+  // Detect author submission detail pages.
+  // These pages have their own full-screen workflow layout (mirroring OJS 3.3),
+  // so we should not wrap them with the global author header + sidebar layout.
+  const isSubmissionDetail = pathname?.match(/\/author\/submissions\/[^/]+$/);
+
   // Fetch journals for dropdown
   useEffect(() => {
     const fetchJournals = async () => {
@@ -131,6 +136,12 @@ export default function AuthorLayout({
   if (!user) {
     router.push('/login?source=' + encodeURIComponent(window.location.pathname));
     return null;
+  }
+
+  // Skip global layout wrapper for submission detail workflow pages
+  // so that the author dashboard per-submission matches OJS 3.3's focused workflow UI.
+  if (isSubmissionDetail) {
+    return <>{children}</>;
   }
 
   return (

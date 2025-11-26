@@ -173,15 +173,16 @@ export default function ManagerLayout({ children }: Props) {
       {/* Sidebar - OJS PKP 3.3 Style */}
       <aside style={{
         width: '256px',
-        backgroundColor: '#ffffff',
-        borderRight: '1px solid #dee2e6',
+        backgroundColor: '#002C40',
+        borderRight: 'none',
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column'
       }}>
         <div style={{
           padding: '1rem',
-          borderBottom: '1px solid #dee2e6'
+          borderBottom: 'none',
+          backgroundColor: '#002C40'
         }}>
           <Link 
             href="/manager" 
@@ -192,11 +193,11 @@ export default function ManagerLayout({ children }: Props) {
               textDecoration: 'none'
             }}
           >
-            <BookOpen style={{ height: '1.5rem', width: '1.5rem', color: '#006798' }} />
+            <BookOpen style={{ height: '1.5rem', width: '1.5rem', color: '#ffffff' }} />
             <span style={{
               fontSize: '1.125rem',
               fontWeight: 600,
-              color: '#000000'
+              color: '#ffffff'
             }}>
               Journal Manager
             </span>
@@ -230,8 +231,8 @@ export default function ManagerLayout({ children }: Props) {
                       padding: '0.5rem 0.75rem',
                       borderRadius: '0.375rem',
                       marginBottom: '0.25rem',
-                      backgroundColor: parentActive ? '#006798' : 'transparent',
-                      color: parentActive ? '#ffffff' : '#374151',
+                  backgroundColor: parentActive ? '#ffffff' : 'transparent',
+                  color: parentActive ? '#002C40' : '#ffffff',
                       fontSize: '0.875rem',
                       border: 'none',
                       cursor: 'pointer',
@@ -239,7 +240,7 @@ export default function ManagerLayout({ children }: Props) {
                     }}
                     onMouseEnter={(e) => {
                       if (!parentActive) {
-                        e.currentTarget.style.backgroundColor = '#f3f4f6';
+                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
                       }
                     }}
                     onMouseLeave={(e) => {
@@ -278,15 +279,15 @@ export default function ManagerLayout({ children }: Props) {
                               borderRadius: '0.375rem',
                               marginBottom: '0.25rem',
                               fontSize: '0.875rem',
-                              backgroundColor: subActive ? '#006798' : 'transparent',
-                              color: subActive ? '#ffffff' : '#374151',
+                              backgroundColor: subActive ? '#ffffff' : 'transparent',
+                              color: subActive ? '#002C40' : '#ffffff',
                               textDecoration: 'none',
                               transition: 'background-color 0.15s ease-in-out',
                               cursor: 'pointer',
                             }}
                             onMouseEnter={(e) => {
                               if (!subActive) {
-                                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
                               }
                             }}
                             onMouseLeave={(e) => {
@@ -318,15 +319,15 @@ export default function ManagerLayout({ children }: Props) {
                   borderRadius: '0.375rem',
                   marginBottom: '0.25rem',
                   textDecoration: 'none',
-                  backgroundColor: active ? '#006798' : 'transparent',
-                  color: active ? '#ffffff' : '#374151',
+                  backgroundColor: active ? '#ffffff' : 'transparent',
+                  color: active ? '#002C40' : '#ffffff',
                   fontSize: '0.875rem',
                   transition: 'background-color 0.15s ease-in-out',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
                   if (!active) {
-                    e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -350,10 +351,10 @@ export default function ManagerLayout({ children }: Props) {
         flexDirection: 'column',
         minWidth: 0
       }}>
-        {/* Header - OJS PKP 3.3 Style */}
+        {/* Header - OJS PKP 3.3 Style (dark blue bar, same theme as editor) */}
         <header style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #dee2e6',
+          backgroundColor: '#002C40',
+          borderBottom: '1px solid #001826',
           padding: '0.75rem 1.5rem',
           display: 'flex',
           alignItems: 'center',
@@ -372,7 +373,7 @@ export default function ManagerLayout({ children }: Props) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.25rem',
-                    color: '#374151',
+                    color: '#ffffff',
                     fontSize: '0.875rem',
                     fontWeight: 500,
                     backgroundColor: 'transparent',
@@ -381,14 +382,14 @@ export default function ManagerLayout({ children }: Props) {
                     padding: '0.25rem 0.5rem'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = '#111827';
+                    e.currentTarget.style.color = '#e5e7eb';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.color = '#ffffff';
                   }}
                 >
                   <span>{journals[0]?.title || "Select Journal"}</span>
-                  <ChevronDown style={{ height: '1rem', width: '1rem' }} />
+                  <ChevronDown style={{ height: '1rem', width: '1rem', color: 'inherit' }} />
                 </button>
                 {journalDropdownOpen && (
                   <div style={{
@@ -432,26 +433,26 @@ export default function ManagerLayout({ children }: Props) {
             )}
           </div>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
-          }}>
-            <LanguageSwitcher />
-            <button
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <LanguageSwitcher />
+          <button
               style={{
                 position: 'relative',
                 padding: '0.5rem',
-                color: '#4b5563',
+              color: '#ffffff',
                 backgroundColor: 'transparent',
                 border: 'none',
                 cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#111827';
+              e.currentTarget.style.color = '#e5e7eb';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#4b5563';
+              e.currentTarget.style.color = '#ffffff';
               }}
             >
               <Bell style={{ height: '1.25rem', width: '1.25rem' }} />
@@ -463,7 +464,7 @@ export default function ManagerLayout({ children }: Props) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  color: '#374151',
+                color: '#ffffff',
                   fontSize: '0.875rem',
                   backgroundColor: 'transparent',
                   border: 'none',
@@ -471,10 +472,10 @@ export default function ManagerLayout({ children }: Props) {
                   padding: '0.25rem 0.5rem'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#111827';
+                e.currentTarget.style.color = '#e5e7eb';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#374151';
+                e.currentTarget.style.color = '#ffffff';
                 }}
               >
                 <User style={{ height: '1.25rem', width: '1.25rem' }} />

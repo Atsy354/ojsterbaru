@@ -271,7 +271,7 @@ export default function AdminLayout({
             // Match the height of the content area so there is no white strip
             // at the bottom; the parent flex container already fills the screen.
             height: '100%',
-            width: '16rem',
+            width: '18rem',
             display: 'flex',
             flexDirection: 'column',
             // Sidebar layout is fixed; inner content area will handle scrolling
@@ -339,7 +339,9 @@ export default function AdminLayout({
               overflowY: siteSettingsOpen || adminFunctionsOpen ? 'auto' : 'hidden',
               overflowX: 'hidden',
               minHeight: 0,
-              padding: '0 1.5rem 1.5rem 1.5rem',
+              // Beri padding kanan ekstra supaya ikon panah submenu
+              // tidak tertutup oleh scrollbar ketika muncul.
+              padding: '0 2.25rem 1.5rem 1.5rem',
             }}
           >
             {/* Administration Heading - Reduced */}
@@ -371,6 +373,13 @@ export default function AdminLayout({
                         style={{
                           backgroundColor: 'transparent',
                           color: 'rgba(255,255,255,0.85)',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
                         <span className="flex items-center gap-3">
@@ -378,15 +387,22 @@ export default function AdminLayout({
                             className="h-5 w-5"
                             style={{ color: 'rgba(255,255,255,0.85)' }}
                           />
-                          <span>{item.name}</span>
+                          <span
+                            style={{
+                              textAlign: 'left',
+                            }}
+                          >
+                            {item.name}
+                          </span>
+                          <ChevronRight
+                            className="h-4 w-4"
+                            style={{
+                              color: 'rgba(255,255,255,0.85)',
+                              transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.15s ease-in-out',
+                            }}
+                          />
                         </span>
-                        <ChevronRight
-                          className="h-4 w-4"
-                          style={{
-                            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.15s ease-in-out',
-                          }}
-                        />
                       </button>
 
                       {open && (
@@ -429,6 +445,13 @@ export default function AdminLayout({
                         style={{
                           backgroundColor: 'transparent',
                           color: 'rgba(255,255,255,0.85)',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
                         <span className="flex items-center gap-3">
@@ -436,15 +459,23 @@ export default function AdminLayout({
                             className="h-5 w-5"
                             style={{ color: 'rgba(255,255,255,0.85)' }}
                           />
-                          <span>{item.name}</span>
+                          <span
+                            style={{
+                              whiteSpace: 'nowrap',
+                              textAlign: 'left',
+                            }}
+                          >
+                            {item.name}
+                          </span>
+                          <ChevronRight
+                            className="h-4 w-4"
+                            style={{
+                              color: 'rgba(255,255,255,0.85)',
+                              transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.15s ease-in-out',
+                            }}
+                          />
                         </span>
-                        <ChevronRight
-                          className="h-4 w-4"
-                          style={{
-                            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.15s ease-in-out',
-                          }}
-                        />
                       </button>
 
                       {open && (
