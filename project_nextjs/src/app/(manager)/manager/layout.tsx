@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, Bell, User, Home, BookOpen, LogOut, Settings, Users, BarChart3, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, Bell, User, Home, BookOpen, LogOut, Settings, Users, BarChart3, FileText } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupabase } from "@/providers/supabase-provider";
@@ -26,6 +26,7 @@ export default function ManagerLayout({ children }: Props) {
   const [journals, setJournals] = useState<{ id: string; title: string; path: string }[]>([]);
   const [journalDropdownOpen, setJournalDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const journalDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -94,23 +95,12 @@ export default function ManagerLayout({ children }: Props) {
     setAuthorized(true);
   }, [user, loading, router]);
 
-  if (authorized === null) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#eaedee'
-      }} />
-    );
-  }
-
-  if (!authorized) {
-    return null;
-  }
-
-  const handleLogout = async () => {
-    await logout();
-    router.push("/login");
-  };
+  // Auto-open Settings submenu when landing on any /manager/settings route
+  useEffect(() => {
+    if (pathname?.startsWith("/manager/settings")) {
+      setSettingsOpen(true);
+    }
+  }, [pathname]);
 
   // Handle click outside for dropdowns
   useEffect(() => {
@@ -132,12 +122,39 @@ export default function ManagerLayout({ children }: Props) {
     };
   }, [journalDropdownOpen, userDropdownOpen]);
 
+  if (authorized === null) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#eaedee'
+      }} />
+    );
+  }
+
+  if (!authorized) {
+    return null;
+  }
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
+
   const navItems = [
     { href: "/manager", label: "Dashboard", icon: Home },
     { href: "/manager/submissions", label: "Submissions", icon: FileText },
+    { href: "/manager/issues", label: "Issues", icon: FileText },
     { href: "/manager/users", label: "Users & Roles", icon: Users },
-    { href: "/manager/settings", label: "Settings", icon: Settings },
+    { href: "/manager/publishing", label: "Publishing", icon: BookOpen },
     { href: "/manager/statistics", label: "Statistics", icon: BarChart3 },
+    { href: "/manager/settings", label: "Settings", icon: Settings },
+    { href: "/manager/tools", label: "Tools", icon: FileText },
+  ];
+
+  const settingsSubmenu = [
+    { label: "Website", href: "/manager/settings/website" },
+    { label: "Workflow", href: "/manager/settings/workflow" },
+    { label: "Distribution", href: "/manager/settings/distribution" },
   ];
 
   const isActive = (href: string) => {
@@ -189,6 +206,106 @@ export default function ManagerLayout({ children }: Props) {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
+
+            // Special handling for Settings to show collapsible submenu like OJS 3.3
+            if (item.href === "/manager/settings") {
+              // Parent is only highlighted when exactly on /manager/settings,
+              // when on a submenu route the highlight moves to the submenu item.
+              const parentActive = pathname === "/manager/settings";
+              const open = settingsOpen;
+
+              return (
+                <div key={item.href}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettingsOpen((prev) => !prev);
+                      router.push(item.href);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '0.375rem',
+                      marginBottom: '0.25rem',
+                      backgroundColor: parentActive ? '#006798' : 'transparent',
+                      color: parentActive ? '#ffffff' : '#374151',
+                      fontSize: '0.875rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.15s ease-in-out',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!parentActive) {
+                        e.currentTarget.style.backgroundColor = '#f3f4f6';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!parentActive) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Icon style={{ height: '1rem', width: '1rem' }} />
+                      <span>{item.label}</span>
+                    </span>
+                    <ChevronRight
+                      style={{
+                        height: '1rem',
+                        width: '1rem',
+                        transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.15s ease-in-out',
+                      }}
+                    />
+                  </button>
+
+                  {open && (
+                    <div style={{ marginLeft: '0.5rem', marginTop: '0.25rem' }}>
+                      {settingsSubmenu.map((subItem) => {
+                        const subActive = pathname === subItem.href;
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem 0.75rem',
+                              borderRadius: '0.375rem',
+                              marginBottom: '0.25rem',
+                              fontSize: '0.875rem',
+                              backgroundColor: subActive ? '#006798' : 'transparent',
+                              color: subActive ? '#ffffff' : '#374151',
+                              textDecoration: 'none',
+                              transition: 'background-color 0.15s ease-in-out',
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!subActive) {
+                                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!subActive) {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }
+                            }}
+                          >
+                            {subItem.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Regular navigation items
             return (
               <Link
                 key={item.href}

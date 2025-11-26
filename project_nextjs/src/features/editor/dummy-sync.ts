@@ -289,17 +289,28 @@ async function syncDummyData() {
 
 async function ensureJournals(supabase: SupabaseClient) {
   try {
-    const { data: existingJournals, error } = await supabase.from("journals").select("id, title, path");
+    // Some deployments of the `journals` table do not have a `title` column.
+    // We select all fields and normalise them to a common shape.
+    const { data: existingJournals, error } = await supabase.from("journals").select("*");
     if (error) {
       console.error("Error fetching journals:", error);
       throw error;
     }
 
-  const existingByTitle = new Map(existingJournals?.map((journal) => [journal.title, journal.id]));
-  const usedPaths = new Set(existingJournals?.map((journal) => journal.path));
-  const journalMap = new Map<string, string>();
+    const normalised = (existingJournals ?? []).map((journal: any) => ({
+      id: journal.id as string,
+      title: (journal.title ?? journal.name ?? journal.journal_title ?? "") as string,
+      path: (journal.path ?? journal.slug ?? journal.journal_path ?? "") as string,
+    }));
 
-  const journalsToInsert: Array<{ id: string; title: string; path: string; description: string | null }> = [];
+    const existingByTitle = new Map(normalised.map((journal) => [journal.title, journal.id]));
+    const usedPaths = new Set(normalised.map((journal) => journal.path).filter((p) => !!p));
+    const journalMap = new Map<string, string>();
+
+    // Use a generic shape for insert that matches common OJS-style schemas:
+    // id, name, path, description. We avoid using a `title` DB column
+    // because it may not exist in some deployments.
+    const journalsToInsert: Array<{ id: string; name: string; path: string; description: string | null }> = [];
 
   const uniqueDummyJournals = new Map<string, { title: string }>();
   DUMMY_SUBMISSIONS.forEach((submission) => {
@@ -324,7 +335,7 @@ async function ensureJournals(supabase: SupabaseClient) {
     const newId = randomUUID();
     journalsToInsert.push({
       id: newId,
-      title,
+      name: title,
       path: slug,
       description: null,
     });
@@ -340,8 +351,13 @@ async function ensureJournals(supabase: SupabaseClient) {
 
   // Re-fetch IDs for any journals that might have been inserted by other processes
   if (journalMap.size !== uniqueDummyJournals.size) {
-    const { data: refreshed } = await supabase.from("journals").select("id, title");
-    refreshed?.forEach((journal) => {
+    const { data: refreshed } = await supabase.from("journals").select("*");
+    const refreshedNormalised = (refreshed ?? []).map((journal: any) => ({
+      id: journal.id as string,
+      title: (journal.title ?? journal.name ?? journal.journal_title ?? "") as string,
+    }));
+
+    refreshedNormalised.forEach((journal) => {
       for (const [dummyId, { title }] of uniqueDummyJournals.entries()) {
         if (title === journal.title) {
           journalMap.set(dummyId, journal.id);
@@ -350,7 +366,7 @@ async function ensureJournals(supabase: SupabaseClient) {
     });
   }
 
-    return journalMap;
+  return journalMap;
   } catch (error) {
     console.error("Error in ensureJournals:", error);
     throw error;
