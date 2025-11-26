@@ -85,9 +85,9 @@ export default function AdminLayout({
     },
     {
       name: t('admin.hostedJournals'),
-      href: "/admin/site-management",
+      href: "/admin/site-management/hosted-journals",
       icon: BookOpen,
-      current: pathname.startsWith("/admin/site-management")
+      current: pathname.startsWith("/admin/site-management/hosted-journals")
     },
     {
       name: t('admin.users'),
@@ -328,18 +328,25 @@ export default function AdminLayout({
             <nav className="space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
+                const isActive = item.current;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      item.current
-                        ? 'bg-white bg-opacity-15 text-white'
-                        : 'text-white hover:bg-white hover:bg-opacity-10 hover:text-white'
+                      isActive
+                        ? 'bg-white'
+                        : 'hover:bg-white hover:bg-opacity-10'
                     }`}
+                    style={{
+                      color: isActive ? '#002C40' : 'rgba(255,255,255,0.85)',
+                    }}
                   >
-                    <Icon className="h-5 w-5" />
-                    {item.name}
+                    <Icon
+                      className="h-5 w-5"
+                      style={{ color: isActive ? '#002C40' : 'rgba(255,255,255,0.85)' }}
+                    />
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
@@ -347,38 +354,44 @@ export default function AdminLayout({
               {/* Site Settings Submenu */}
               {pathname.startsWith("/admin/site-settings") && (
                 <div className="ml-8 mt-2 space-y-1">
-                  {siteSettingsSubmenu.map((subItem) => (
-                    <Link
-                      key={subItem.name}
-                      href={subItem.href}
-                      className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                        pathname === subItem.href
-                          ? 'bg-white bg-opacity-15 text-white'
-                          : 'text-white hover:bg-white hover:bg-opacity-10 hover:text-white'
-                      }`}
-                    >
-                      {subItem.name}
-                    </Link>
-                  ))}
+                  {siteSettingsSubmenu.map((subItem) => {
+                    const isActive = pathname === subItem.href;
+                    return (
+                      <Link
+                        key={subItem.name}
+                        href={subItem.href}
+                        className="block px-3 py-2 rounded-md text-sm transition-colors"
+                        style={{
+                          backgroundColor: isActive ? '#ffffff' : 'transparent',
+                          color: isActive ? '#002C40' : 'rgba(255,255,255,0.85)',
+                        }}
+                      >
+                        {subItem.name}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
               
               {/* Administrative Functions Submenu */}
               {pathname.startsWith("/admin/system") && (
                 <div className="ml-8 mt-2 space-y-1">
-                  {administrativeFunctionsSubmenu.map((subItem) => (
-                    <Link
-                      key={subItem.name}
-                      href={subItem.href}
-                      className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                        pathname === subItem.href
-                          ? 'bg-white bg-opacity-15 text-white'
-                          : 'text-white hover:bg-white hover:bg-opacity-10 hover:text-white'
-                      }`}
-                    >
-                      {subItem.name}
-                    </Link>
-                  ))}
+                  {administrativeFunctionsSubmenu.map((subItem) => {
+                    const isActive = pathname === subItem.href;
+                    return (
+                      <Link
+                        key={subItem.name}
+                        href={subItem.href}
+                        className="block px-3 py-2 rounded-md text-sm transition-colors"
+                        style={{
+                          backgroundColor: isActive ? '#ffffff' : 'transparent',
+                          color: isActive ? '#002C40' : 'rgba(255,255,255,0.85)',
+                        }}
+                      >
+                        {subItem.name}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </nav>

@@ -87,57 +87,112 @@ function AdminUsers() {
   });
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif' }}>
-      {/* OJS PKP 3.3 Style Header */}
-      <div style={{ 
-        borderBottom: '2px solid #e5e5e5',
-        paddingBottom: '1rem',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div>
-          <h1 style={{
-            fontSize: '1.75rem',
-            fontWeight: 700,
-            color: '#002C40',
-            margin: 0,
-            marginBottom: '0.25rem'
-          }}>
-            User Management
-          </h1>
-          <p style={{
-            fontSize: '0.875rem',
-            color: '#666',
-            margin: 0
-          }}>
-            Manage all users across the site
-          </p>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff' }}>
+      {/* Header Bar - mengikuti gaya Hosted Journals (safe area + breadcrumb) */}
+      <div
+        style={{
+          backgroundColor: '#e5e5e5',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid #d1d5db',
+        }}
+      >
+        <div style={{ marginBottom: '0.5rem' }}>
+          <Link
+            href="/admin"
+            style={{
+              color: '#006798',
+              textDecoration: 'underline',
+              fontSize: '1rem',
+            }}
+          >
+            Site Administration
+          </Link>
+          <span
+            style={{
+              color: '#6B7280',
+              margin: '0 0.5rem',
+              fontSize: '1rem',
+            }}
+          >
+            »
+          </span>
+          <span
+            style={{
+              color: '#111827',
+              fontSize: '1rem',
+            }}
+          >
+            Users
+          </span>
         </div>
-        <Link
-          href="/admin/users/create"
+        <h1
           style={{
-            fontSize: '0.875rem',
+            fontSize: '1.25rem',
             fontWeight: 600,
-            padding: '0.5rem 1rem',
-            backgroundColor: '#006798',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            textDecoration: 'none',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            color: '#111827',
+            margin: 0,
           }}
         >
-          <UserPlus style={{ width: '1rem', height: '1rem' }} />
-          Add New User
-        </Link>
+          User Management
+        </h1>
       </div>
 
-      {/* Filters */}
+      {/* Safe area content */}
+      <div
+        style={{
+          padding: '2rem 1.5rem',
+        }}
+      >
+        {/* OJS PKP 3.3 Style Header (di dalam konten) */}
+        <div style={{ 
+          borderBottom: '2px solid #e5e5e5',
+          paddingBottom: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#002C40',
+              margin: 0,
+              marginBottom: '0.25rem'
+            }}>
+              User Management
+            </h2>
+            <p style={{
+              fontSize: '0.875rem',
+              color: '#666',
+              margin: 0
+            }}>
+              Manage all users across the site
+            </p>
+          </div>
+          <Link
+            href="/admin/users/create"
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              padding: '0.5rem 1rem',
+              backgroundColor: '#006798',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <UserPlus style={{ width: '1rem', height: '1rem' }} />
+            Add New User
+          </Link>
+        </div>
+
+        {/* Filters */}
       <div style={{
         backgroundColor: '#fff',
         border: '1px solid #dee2e6',
@@ -301,7 +356,7 @@ function AdminUsers() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+        {/* Summary Cards */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -489,7 +544,7 @@ function AdminUsers() {
         </div>
       </div>
 
-      {/* Users Table */}
+        {/* Users Table */}
       <div style={{
         backgroundColor: '#fff',
         border: '1px solid #dee2e6',
@@ -803,6 +858,7 @@ function AdminUsers() {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );
