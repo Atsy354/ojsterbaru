@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { getRedirectPathByRole } from "@/lib/auth-redirect";
 import { 
   ChevronDown, 
+  ChevronRight,
   Menu, 
   X, 
   Settings, 
@@ -40,6 +41,8 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [siteSettingsOpen, setSiteSettingsOpen] = useState(false);
+  const [adminFunctionsOpen, setAdminFunctionsOpen] = useState(false);
   const supabase = useSupabase();
   const [journals, setJournals] = useState<{ id: string; title: string; path: string }[]>([]);
 
@@ -116,10 +119,9 @@ export default function AdminLayout({
   ];
 
   const siteSettingsSubmenu = [
-    { name: t('siteSettings.setup'), href: "/admin/site-settings/site-setup" },
-    { name: t('siteSettings.languages'), href: "/admin/site-settings/site-setup/languages" },
-    { name: t('siteSettings.bulkEmails'), href: "/admin/site-settings/site-setup/bulk-emails" },
-    { name: t('siteSettings.navigation'), href: "/admin/site-settings/site-setup/navigation" }
+    { name: t("siteSettings.setup"), href: "/admin/site-settings/site-setup" },
+    { name: t("siteSettings.appearance"), href: "/admin/site-settings/appearance" },
+    { name: t("siteSettings.plugins"), href: "/admin/site-settings/plugins" },
   ];
 
   const administrativeFunctionsSubmenu = [
@@ -147,6 +149,16 @@ export default function AdminLayout({
     }
   }, [user, loading, router]);
 
+  // Auto-open submenus when on their routes
+  useEffect(() => {
+    if (pathname.startsWith("/admin/site-settings")) {
+      setSiteSettingsOpen(true);
+    }
+    if (pathname.startsWith("/admin/system")) {
+      setAdminFunctionsOpen(true);
+    }
+  }, [pathname]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -163,7 +175,9 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    // Use a fixed container so the browser window itself never scrolls.
+    // Scrolling is handled separately by the sidebar and main content.
+    <div className="fixed inset-0 overflow-hidden bg-white flex flex-col">
       {/* Top Bar - Dark Blue */}
       <header className="bg-[#002C40] text-white" style={{backgroundColor: '#002C40'}}>
         <div className="px-6 py-4 flex items-center justify-between" style={{padding: '1rem 1.5rem'}}>
@@ -248,15 +262,23 @@ export default function AdminLayout({
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Dark Blue - Reduced Size */}
-        <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block bg-[#002C40]`} style={{
-          backgroundColor: '#002C40',
-          minHeight: 'calc(100vh - 64px)',
-          width: '16rem',
-          display: 'flex',
-          flexDirection: 'column',
-        }}>
+        <aside
+          className={`${sidebarOpen ? 'block' : 'hidden'} lg:block bg-[#002C40]`}
+          style={{
+            backgroundColor: '#002C40',
+            // Match the height of the content area so there is no white strip
+            // at the bottom; the parent flex container already fills the screen.
+            height: '100%',
+            width: '16rem',
+            display: 'flex',
+            flexDirection: 'column',
+            // Sidebar layout is fixed; inner content area will handle scrolling
+            // so the scrollbar appears visually "inside" the sidebar.
+            overflow: 'hidden',
+          }}
+        >
           <div style={{padding: '1.5rem 1.25rem', flexShrink: 0}}>
             {/* Mobile menu button */}
             <button
@@ -307,11 +329,14 @@ export default function AdminLayout({
           </div>
           
           {/* Navigation - Scrollable Area */}
-          <div 
+          <div
             className="sidebar-scrollable"
             style={{
               flex: 1,
-              overflowY: 'auto',
+              // Scrollbar appears only when one of the submenus is open and
+              // content exceeds the available height, and it is confined
+              // visually inside the sidebar column.
+              overflowY: siteSettingsOpen || adminFunctionsOpen ? 'auto' : 'hidden',
               overflowX: 'hidden',
               minHeight: 0,
               padding: '0 1.5rem 1.5rem 1.5rem',
@@ -329,6 +354,124 @@ export default function AdminLayout({
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = item.current;
+
+                // Site Settings with collapsible submenu
+                if (item.href.startsWith("/admin/site-settings")) {
+                  const open = siteSettingsOpen;
+                  return (
+                    <div key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Hanya toggle submenu; navigasi dilakukan lewat sub menu,
+                          // supaya tidak langsung redirect ketika pertama kali diklik.
+                          setSiteSettingsOpen((prev) => !prev);
+                        }}
+                        className="flex items-center justify-between w-full px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: 'rgba(255,255,255,0.85)',
+                        }}
+                      >
+                        <span className="flex items-center gap-3">
+                          <Icon
+                            className="h-5 w-5"
+                            style={{ color: 'rgba(255,255,255,0.85)' }}
+                          />
+                          <span>{item.name}</span>
+                        </span>
+                        <ChevronRight
+                          className="h-4 w-4"
+                          style={{
+                            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.15s ease-in-out',
+                          }}
+                        />
+                      </button>
+
+                      {open && (
+                        <div className="mt-2 space-y-1 ml-4">
+                          {siteSettingsSubmenu.map((subItem) => {
+                            const activeSub = pathname === subItem.href;
+                            return (
+                              <Link
+                                key={subItem.name}
+                                href={subItem.href}
+                                className="block px-3 py-2 rounded-md text-sm transition-colors"
+                                style={{
+                                  backgroundColor: activeSub ? '#ffffff' : 'transparent',
+                                  color: activeSub ? '#002C40' : 'rgba(255,255,255,0.85)',
+                                }}
+                              >
+                                {subItem.name}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Administrative Functions with collapsible submenu
+                if (item.href.startsWith("/admin/system")) {
+                  const open = adminFunctionsOpen;
+                  return (
+                    <div key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Hanya toggle submenu; navigasi dilakukan lewat sub menu,
+                          // supaya tidak langsung redirect ketika pertama kali diklik.
+                          setAdminFunctionsOpen((prev) => !prev);
+                        }}
+                        className="flex items-center justify-between w-full px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: 'rgba(255,255,255,0.85)',
+                        }}
+                      >
+                        <span className="flex items-center gap-3">
+                          <Icon
+                            className="h-5 w-5"
+                            style={{ color: 'rgba(255,255,255,0.85)' }}
+                          />
+                          <span>{item.name}</span>
+                        </span>
+                        <ChevronRight
+                          className="h-4 w-4"
+                          style={{
+                            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.15s ease-in-out',
+                          }}
+                        />
+                      </button>
+
+                      {open && (
+                        <div className="mt-2 space-y-1 ml-4">
+                          {administrativeFunctionsSubmenu.map((subItem) => {
+                            const activeSub = pathname === subItem.href;
+                            return (
+                              <Link
+                                key={subItem.name}
+                                href={subItem.href}
+                                className="block px-3 py-2 rounded-md text-sm transition-colors"
+                                style={{
+                                  backgroundColor: activeSub ? '#ffffff' : 'transparent',
+                                  color: activeSub ? '#002C40' : 'rgba(255,255,255,0.85)',
+                                }}
+                              >
+                                {subItem.name}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Regular navigation items
                 return (
                   <Link
                     key={item.name}
@@ -350,50 +493,6 @@ export default function AdminLayout({
                   </Link>
                 );
               })}
-              
-              {/* Site Settings Submenu */}
-              {pathname.startsWith("/admin/site-settings") && (
-                <div className="ml-8 mt-2 space-y-1">
-                  {siteSettingsSubmenu.map((subItem) => {
-                    const isActive = pathname === subItem.href;
-                    return (
-                      <Link
-                        key={subItem.name}
-                        href={subItem.href}
-                        className="block px-3 py-2 rounded-md text-sm transition-colors"
-                        style={{
-                          backgroundColor: isActive ? '#ffffff' : 'transparent',
-                          color: isActive ? '#002C40' : 'rgba(255,255,255,0.85)',
-                        }}
-                      >
-                        {subItem.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-              
-              {/* Administrative Functions Submenu */}
-              {pathname.startsWith("/admin/system") && (
-                <div className="ml-8 mt-2 space-y-1">
-                  {administrativeFunctionsSubmenu.map((subItem) => {
-                    const isActive = pathname === subItem.href;
-                    return (
-                      <Link
-                        key={subItem.name}
-                        href={subItem.href}
-                        className="block px-3 py-2 rounded-md text-sm transition-colors"
-                        style={{
-                          backgroundColor: isActive ? '#ffffff' : 'transparent',
-                          color: isActive ? '#002C40' : 'rgba(255,255,255,0.85)',
-                        }}
-                      >
-                        {subItem.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
             </nav>
 
             {/* OJS 3.3-style Administration block controlled by Sidebar settings */}
@@ -401,8 +500,8 @@ export default function AdminLayout({
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 bg-white min-h-screen">
+        {/* Main Content (no scrollbar; content clipped if taller than viewport) */}
+        <main className="flex-1 bg-white h-[calc(100vh-64px)] overflow-hidden">
           {children}
         </main>
       </div>
